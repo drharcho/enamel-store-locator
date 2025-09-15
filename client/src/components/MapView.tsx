@@ -80,9 +80,9 @@ export default function MapView({
               This is where your Google Maps integration will appear
             </p>
             <div className="text-sm text-muted-foreground space-y-2">
-              <p>✓ Custom store markers with popups</p>
-              <p>✓ User location detection</p>
-              <p>✓ Click interactions for store details</p>
+              <p>✓ Custom clinic markers with popups</p>
+              <p>✓ Interactive location details</p>
+              <p>✓ Get directions functionality</p>
               <p className="text-xs mt-4 text-primary">
                 Add your Google Maps API key to see the live map
               </p>
