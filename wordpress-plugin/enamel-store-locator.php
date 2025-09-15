@@ -175,11 +175,99 @@ class EnamelStoreLocator {
      * Initialize admin settings
      */
     public function admin_init() {
-        // Register settings sections and fields
+        // Register all settings with proper sanitization for the new admin interface
+        $this->register_all_settings();
+        
+        // Register settings sections and fields for legacy interface (if needed)
         $this->register_general_settings();
         $this->register_content_settings();
         $this->register_color_settings();
         $this->register_map_settings();
+    }
+    
+    /**
+     * Register all settings for the new admin interface
+     */
+    private function register_all_settings() {
+        // All settings with their sanitization callbacks
+        $all_settings = array(
+            'google_maps_api_key' => 'sanitize_text_field',
+            'default_lat' => array($this, 'sanitize_latitude'),
+            'default_lng' => array($this, 'sanitize_longitude'),
+            'default_zoom' => array($this, 'sanitize_zoom_level'),
+            'default_radius' => 'absint',
+            'header_main_title' => 'sanitize_text_field',
+            'header_subtitle' => 'sanitize_textarea_field',
+            'search_section_title' => 'sanitize_text_field',
+            'search_input_placeholder' => 'sanitize_text_field',
+            'search_button_text' => 'sanitize_text_field',
+            'location_button_text' => 'sanitize_text_field',
+            'directions_button_text' => 'sanitize_text_field',
+            'call_button_text' => 'sanitize_text_field',
+            'footer_text' => 'sanitize_text_field',
+            'primary_color' => 'sanitize_hex_color',
+            'accent_color' => 'sanitize_hex_color',
+            'background_color' => 'sanitize_hex_color',
+            'card_background' => 'sanitize_hex_color',
+            'primary_text' => 'sanitize_hex_color',
+            'secondary_text' => 'sanitize_hex_color',
+            'marker_color' => 'sanitize_hex_color',
+            'map_type' => array($this, 'sanitize_map_type'),
+            'enable_clustering' => array($this, 'sanitize_checkbox')
+        );
+        
+        // Register each setting with the enamel_sl_settings group
+        foreach ($all_settings as $setting => $sanitize_callback) {
+            register_setting(
+                'enamel_sl_settings',
+                'enamel_sl_' . $setting,
+                array(
+                    'sanitize_callback' => $sanitize_callback,
+                    'default' => $this->get_default_value($setting)
+                )
+            );
+        }
+    }
+    
+    /**
+     * Get default value for a setting
+     */
+    private function get_default_value($setting) {
+        $defaults = array(
+            'google_maps_api_key' => '',
+            'default_lat' => '30.3072',
+            'default_lng' => '-97.7560',
+            'default_zoom' => 10,
+            'default_radius' => 25,
+            'header_main_title' => 'Find Your Nearest Location',
+            'header_subtitle' => 'Quality dental care across Texas with convenient locations',
+            'search_section_title' => 'Find Nearest Location',
+            'search_input_placeholder' => 'Enter address or zip code',
+            'search_button_text' => 'Search',
+            'location_button_text' => 'Use My Location',
+            'directions_button_text' => 'Get Directions',
+            'call_button_text' => 'Call',
+            'footer_text' => 'Established in 2016 • Quality dental care using the latest technology',
+            'primary_color' => '#7D55C7',
+            'accent_color' => '#E56B10',
+            'background_color' => '#FFFFFF',
+            'card_background' => '#F8F9FA',
+            'primary_text' => '#231942',
+            'secondary_text' => '#6B7280',
+            'marker_color' => '#7D55C7',
+            'map_type' => 'roadmap',
+            'enable_clustering' => false
+        );
+        
+        return isset($defaults[$setting]) ? $defaults[$setting] : '';
+    }
+    
+    /**
+     * Sanitize map type
+     */
+    public function sanitize_map_type($value) {
+        $allowed = array('roadmap', 'satellite', 'hybrid', 'terrain');
+        return in_array($value, $allowed) ? $value : 'roadmap';
     }
     
     /**

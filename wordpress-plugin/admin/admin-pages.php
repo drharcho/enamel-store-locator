@@ -156,289 +156,58 @@ class EnamelStoreLocatorAdmin {
      * Settings page
      */
     public static function settings_page() {
-        // Handle form submission
-        if (isset($_POST['submit'])) {
-            check_admin_referer('enamel_sl_settings');
-            
-            // Save settings
-            $settings_fields = array(
-                'google_maps_api_key',
-                'default_lat',
-                'default_lng', 
-                'default_zoom',
-                'header_main_title',
-                'header_subtitle',
-                'search_section_title',
-                'search_input_placeholder',
-                'search_button_text',
-                'location_button_text',
-                'footer_text',
-                'directions_button_text',
-                'call_button_text'
-            );
-            
-            foreach ($settings_fields as $field) {
-                if (isset($_POST['enamel_sl_' . $field])) {
-                    update_option('enamel_sl_' . $field, sanitize_text_field($_POST['enamel_sl_' . $field]));
-                }
-            }
-            
-            echo '<div class="notice notice-success"><p>' . __('Settings saved successfully!', 'enamel-store-locator') . '</p></div>';
-        }
-        
+        // Enqueue admin assets
+        wp_enqueue_style('wp-color-picker');
+        wp_enqueue_style('enamel-admin-styles', ENAMEL_SL_PLUGIN_URL . 'admin/assets/admin-styles.css', array(), ENAMEL_SL_VERSION);
+        wp_enqueue_script('wp-color-picker');
+        wp_enqueue_script('enamel-admin-scripts', ENAMEL_SL_PLUGIN_URL . 'admin/assets/admin-scripts.js', array('jquery', 'wp-color-picker'), ENAMEL_SL_VERSION, true);
         ?>
         <div class="wrap">
-            <h1><?php _e('Store Locator Settings', 'enamel-store-locator'); ?></h1>
-            
-            <form method="post" action="">
-                <?php wp_nonce_field('enamel_sl_settings'); ?>
-                <?php settings_fields('enamel_sl_general'); ?>
-                
-                <div class="enamel-sl-settings-tabs">
-                    <nav class="nav-tab-wrapper">
-                        <a href="#general" class="nav-tab nav-tab-active"><?php _e('General', 'enamel-store-locator'); ?></a>
-                        <a href="#content" class="nav-tab"><?php _e('Content', 'enamel-store-locator'); ?></a>
-                        <a href="#colors" class="nav-tab"><?php _e('Colors', 'enamel-store-locator'); ?></a>
-                    </nav>
-                    
-                    <div id="general" class="tab-content active">
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row"><?php _e('Google Maps API Key', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_google_maps_api_key" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_google_maps_api_key')); ?>" 
-                                           class="regular-text" />
-                                    <p class="description">
-                                        <?php _e('Get your API key from the', 'enamel-store-locator'); ?> 
-                                        <a href="https://console.cloud.google.com/" target="_blank"><?php _e('Google Cloud Console', 'enamel-store-locator'); ?></a>
-                                    </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Default Map Center', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <label><?php _e('Latitude:', 'enamel-store-locator'); ?>
-                                        <input type="text" 
-                                               name="enamel_sl_default_lat" 
-                                               value="<?php echo esc_attr(get_option('enamel_sl_default_lat', '30.3072')); ?>" />
-                                    </label><br><br>
-                                    <label><?php _e('Longitude:', 'enamel-store-locator'); ?>
-                                        <input type="text" 
-                                               name="enamel_sl_default_lng" 
-                                               value="<?php echo esc_attr(get_option('enamel_sl_default_lng', '-97.7560')); ?>" />
-                                    </label>
-                                    <p class="description"><?php _e('Default center point for the map (Austin, TX shown as example)', 'enamel-store-locator'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Default Zoom Level', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <select name="enamel_sl_default_zoom">
-                                        <?php
-                                        $current_zoom = get_option('enamel_sl_default_zoom', 10);
-                                        for ($i = 1; $i <= 20; $i++) {
-                                            echo '<option value="' . $i . '"' . selected($current_zoom, $i, false) . '>' . $i . '</option>';
-                                        }
-                                        ?>
-                                    </select>
-                                    <p class="description"><?php _e('Map zoom level (1 = world view, 20 = building level)', 'enamel-store-locator'); ?></p>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div id="content" class="tab-content">
-                        <h2><?php _e('Content Customization', 'enamel-store-locator'); ?></h2>
-                        <p><?php _e('Customize all text that appears in the store locator:', 'enamel-store-locator'); ?></p>
-                        
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row"><?php _e('Main Title', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_header_main_title" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_header_main_title', 'Find Your Nearest Location')); ?>" 
-                                           class="regular-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Subtitle', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_header_subtitle" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_header_subtitle', 'Quality dental care across Texas with convenient locations')); ?>" 
-                                           class="large-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Search Section Title', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_search_section_title" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_search_section_title', 'Find Nearest Location')); ?>" 
-                                           class="regular-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Search Input Placeholder', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_search_input_placeholder" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code')); ?>" 
-                                           class="regular-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Search Button Text', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_search_button_text" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_search_button_text', 'Search')); ?>" 
-                                           class="regular-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Use Location Button Text', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_location_button_text" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_location_button_text', 'Use My Location')); ?>" 
-                                           class="regular-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Directions Button Text', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_directions_button_text" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_directions_button_text', 'Get Directions')); ?>" 
-                                           class="regular-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Call Button Text', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_call_button_text" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_call_button_text', 'Call')); ?>" 
-                                           class="regular-text" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Footer Text', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_footer_text" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_footer_text', 'Established in 2016 • Quality dental care using the latest technology')); ?>" 
-                                           class="large-text" />
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div id="colors" class="tab-content">
-                        <h2><?php _e('Color Scheme', 'enamel-store-locator'); ?></h2>
-                        <p><?php _e('Customize the colors to match your brand:', 'enamel-store-locator'); ?></p>
-                        
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row"><?php _e('Primary Color (Headers)', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_primary_color" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_primary_color', '#7D55C7')); ?>" 
-                                           class="color-field" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Accent Color (Call Buttons)', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_accent_color" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_accent_color', '#E56B10')); ?>" 
-                                           class="color-field" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Background Color', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_background_color" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_background_color', '#FFFFFF')); ?>" 
-                                           class="color-field" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Card Background', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_card_background" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_card_background', '#F8F9FA')); ?>" 
-                                           class="color-field" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Primary Text Color', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_primary_text" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_primary_text', '#231942')); ?>" 
-                                           class="color-field" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php _e('Secondary Text Color', 'enamel-store-locator'); ?></th>
-                                <td>
-                                    <input type="text" 
-                                           name="enamel_sl_secondary_text" 
-                                           value="<?php echo esc_attr(get_option('enamel_sl_secondary_text', '#6B7280')); ?>" 
-                                           class="color-field" />
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+            <div class="enamel-admin-container">
+                <div class="enamel-admin-header">
+                    <h1><?php _e('Store Locator Settings', 'enamel-store-locator'); ?></h1>
+                    <p><?php _e('Customize your store locator appearance, content, and functionality', 'enamel-store-locator'); ?></p>
                 </div>
                 
-                <?php submit_button(__('Save Settings', 'enamel-store-locator')); ?>
-            </form>
+                <div class="enamel-admin-tabs">
+                    <button type="button" class="enamel-admin-tab active" data-tab="content-tab">
+                        <?php _e('Content & Text', 'enamel-store-locator'); ?>
+                    </button>
+                    <button type="button" class="enamel-admin-tab" data-tab="colors-tab">
+                        <?php _e('Colors & Branding', 'enamel-store-locator'); ?>
+                    </button>
+                    <button type="button" class="enamel-admin-tab" data-tab="general-tab">
+                        <?php _e('General Settings', 'enamel-store-locator'); ?>
+                    </button>
+                </div>
+                
+                <form method="post" action="options.php" class="enamel-admin-form">
+                    <?php settings_fields('enamel_sl_settings'); ?>
+                    
+                    <!-- Content & Text Tab -->
+                    <div id="content-tab" class="enamel-tab-content active">
+                        <?php self::render_content_settings(); ?>
+                    </div>
+                    
+                    <!-- Colors & Branding Tab -->
+                    <div id="colors-tab" class="enamel-tab-content">
+                        <?php self::render_color_settings(); ?>
+                    </div>
+                    
+                    <!-- General Settings Tab -->
+                    <div id="general-tab" class="enamel-tab-content">
+                        <?php self::render_general_settings(); ?>
+                    </div>
+                    
+                    <div class="enamel-actions">
+                        <button type="button" class="enamel-secondary-button">
+                            <?php _e('Reset to Defaults', 'enamel-store-locator'); ?>
+                        </button>
+                        <?php submit_button(__('Save All Settings', 'enamel-store-locator'), 'primary enamel-primary-button', 'submit', false); ?>
+                    </div>
+                </form>
+            </div>
         </div>
-        
-        <script>
-        jQuery(document).ready(function($) {
-            // Initialize color pickers
-            $('.color-field').wpColorPicker();
-            
-            // Tab switching
-            $('.nav-tab').click(function(e) {
-                e.preventDefault();
-                var target = $(this).attr('href');
-                
-                $('.nav-tab').removeClass('nav-tab-active');
-                $(this).addClass('nav-tab-active');
-                
-                $('.tab-content').removeClass('active');
-                $(target).addClass('active');
-            });
-        });
-        </script>
-        
-        <style>
-        .enamel-sl-settings-tabs .tab-content {
-            display: none;
-            background: #fff;
-            padding: 20px;
-            border: 1px solid #ccd0d4;
-            border-top: none;
-        }
-        .enamel-sl-settings-tabs .tab-content.active {
-            display: block;
-        }
-        .nav-tab-wrapper {
-            margin-bottom: 0;
-        }
-        </style>
         <?php
     }
     
@@ -457,6 +226,379 @@ class EnamelStoreLocatorAdmin {
                 submit_button();
                 ?>
             </form>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Render content settings section
+     */
+    private static function render_content_settings() {
+        // Include field callbacks
+        require_once ENAMEL_SL_PLUGIN_PATH . 'admin/field-callbacks.php';
+        ?>
+        <div class="enamel-preview-section">
+            <h3 class="enamel-preview-title"><?php _e('Live Preview', 'enamel-store-locator'); ?></h3>
+            <div class="enamel-preview-demo">
+                <?php _e('Preview will appear here as you make changes', 'enamel-store-locator'); ?>
+            </div>
+        </div>
+        
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Header Text', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Customize the main header and subtitle', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Main Title', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'header_main_title',
+                            'default' => 'Find Your Nearest Location',
+                            'placeholder' => 'Enter main title...'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Subtitle', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'header_subtitle',
+                            'type' => 'textarea',
+                            'default' => 'Quality dental care across Texas with convenient locations',
+                            'placeholder' => 'Enter subtitle or description...'
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Search Section', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Customize search functionality text', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Search Section Title', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'search_section_title',
+                            'default' => 'Find Nearest Location',
+                            'placeholder' => 'Search section heading...'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Search Placeholder', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'search_input_placeholder',
+                            'default' => 'Enter address or zip code',
+                            'placeholder' => 'Search input placeholder text...'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Search Button', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'search_button_text',
+                            'default' => 'Search',
+                            'class' => 'regular-text'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Location Button', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'location_button_text',
+                            'default' => 'Use My Location',
+                            'class' => 'regular-text'
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Location Cards', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Customize text for location card buttons', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Directions Button', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'directions_button_text',
+                            'default' => 'Get Directions',
+                            'class' => 'regular-text'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Call Button', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'call_button_text',
+                            'default' => 'Call',
+                            'class' => 'regular-text'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Footer Text', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'footer_text',
+                            'default' => 'Established in 2016 • Quality dental care using the latest technology',
+                            'placeholder' => 'Footer or branding text...'
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Render color settings section
+     */
+    private static function render_color_settings() {
+        // Include field callbacks
+        require_once ENAMEL_SL_PLUGIN_PATH . 'admin/field-callbacks.php';
+        ?>
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Brand Colors', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Set your primary brand colors for headers, buttons, and accents', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Primary Color', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::color_field_callback(array(
+                            'field' => 'primary_color',
+                            'description' => __('Used for headers, titles, and primary buttons', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Accent Color', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::color_field_callback(array(
+                            'field' => 'accent_color',
+                            'description' => __('Used for call-to-action buttons and highlights', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Map Marker Color', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::color_field_callback(array(
+                            'field' => 'marker_color',
+                            'description' => __('Color for location markers on the map', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Background Colors', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Customize background and surface colors', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Main Background', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::color_field_callback(array(
+                            'field' => 'background_color',
+                            'description' => __('Main background color for the entire locator', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Card Background', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::color_field_callback(array(
+                            'field' => 'card_background',
+                            'description' => __('Background color for location cards and panels', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Text Colors', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Set text colors for optimal readability', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Primary Text', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::color_field_callback(array(
+                            'field' => 'primary_text',
+                            'description' => __('Main text color for headings and important information', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Secondary Text', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::color_field_callback(array(
+                            'field' => 'secondary_text',
+                            'description' => __('Secondary text for descriptions and less important information', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Render general settings section
+     */
+    private static function render_general_settings() {
+        // Include field callbacks
+        require_once ENAMEL_SL_PLUGIN_PATH . 'admin/field-callbacks.php';
+        ?>
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Google Maps Integration', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Configure your Google Maps API key and default settings', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('API Key', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'google_maps_api_key',
+                            'type' => 'password',
+                            'placeholder' => 'AIzaSy...',
+                            'description' => sprintf(
+                                __('Get your API key from the <a href="%s" target="_blank">Google Cloud Console</a>', 'enamel-store-locator'),
+                                'https://console.cloud.google.com/'
+                            )
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Default Map Center', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php EnamelStoreLocatorFields::default_center_field_callback(); ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Default Zoom Level', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::slider_field_callback(array(
+                            'field' => 'default_zoom',
+                            'min' => 1,
+                            'max' => 20,
+                            'default' => 10,
+                            'description' => __('Map zoom level (1 = world view, 20 = building level)', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Map Appearance', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Customize how your map looks and behaves', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Map Type', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::select_field_callback(array(
+                            'field' => 'map_type',
+                            'default' => 'roadmap',
+                            'options' => array(
+                                'roadmap' => __('Roadmap (Standard)', 'enamel-store-locator'),
+                                'satellite' => __('Satellite', 'enamel-store-locator'),
+                                'hybrid' => __('Hybrid (Satellite + Labels)', 'enamel-store-locator'),
+                                'terrain' => __('Terrain', 'enamel-store-locator')
+                            ),
+                            'description' => __('Default map display type', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Search Radius', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::slider_field_callback(array(
+                            'field' => 'default_radius',
+                            'min' => 5,
+                            'max' => 100,
+                            'default' => 25,
+                            'unit' => ' miles',
+                            'description' => __('Default search radius for finding nearby locations', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Features', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::checkbox_field_callback(array(
+                            'field' => 'enable_clustering',
+                            'label' => __('Enable marker clustering for better performance', 'enamel-store-locator'),
+                            'description' => __('Groups nearby markers when zoomed out to improve map performance', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
         </div>
         <?php
     }
