@@ -86,7 +86,7 @@ export class DatabaseStorage implements IStorage {
   async createClinicLocation(location: InsertClinicLocation): Promise<ClinicLocation> {
     const [newLocation] = await db
       .insert(clinicLocations)
-      .values([location])
+      .values(location as any)
       .returning();
     return newLocation;
   }
@@ -94,7 +94,7 @@ export class DatabaseStorage implements IStorage {
   async updateClinicLocation(id: string, location: Partial<InsertClinicLocation>): Promise<ClinicLocation | undefined> {
     const [updatedLocation] = await db
       .update(clinicLocations)
-      .set({ ...location, updatedAt: new Date() })
+      .set({ ...location, updatedAt: new Date() } as any)
       .where(eq(clinicLocations.id, id))
       .returning();
     return updatedLocation || undefined;
@@ -164,7 +164,7 @@ export class DatabaseStorage implements IStorage {
   async createMapMarker(marker: InsertMapMarker): Promise<MapMarker> {
     const [newMarker] = await db
       .insert(mapMarkers)
-      .values([marker])
+      .values(marker as any)
       .returning();
     return newMarker;
   }
@@ -172,7 +172,7 @@ export class DatabaseStorage implements IStorage {
   async updateMapMarker(id: string, marker: Partial<InsertMapMarker>): Promise<MapMarker | undefined> {
     const [updatedMarker] = await db
       .update(mapMarkers)
-      .set(marker)
+      .set(marker as any)
       .where(eq(mapMarkers.id, id))
       .returning();
     return updatedMarker || undefined;
