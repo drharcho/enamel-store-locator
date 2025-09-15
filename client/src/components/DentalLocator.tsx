@@ -3,7 +3,9 @@ import MapView, { type StoreLocation } from './MapView';
 import LocationCard from './LocationCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapIcon, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { MapIcon, MapPin, Search, Crosshair } from 'lucide-react';
 
 // Sample dental clinic locations - these would come from WordPress backend
 const DENTAL_LOCATIONS: StoreLocation[] = [
@@ -66,6 +68,10 @@ export default function DentalLocator({
   className = ""
 }: DentalLocatorProps) {
   const [selectedLocation, setSelectedLocation] = useState<StoreLocation | null>(null);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchValue, setSearchValue] = useState('');
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   const handleLocationSelect = useCallback((location: StoreLocation | null) => {
     setSelectedLocation(location);
@@ -85,6 +91,49 @@ export default function DentalLocator({
     }
   }, []);
 
+  const handleLocationSearch = useCallback(async (address: string) => {
+    console.log('Searching for location:', address);
+    // For demo purposes, center map on first location if searching for Austin area
+    if (address.toLowerCase().includes('austin') || address.startsWith('78')) {
+      setMapCenter({ lat: 30.3072, lng: -97.7560 });
+    }
+    setSelectedLocation(null);
+  }, []);
+
+  const handleCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      console.log('Geolocation is not supported');
+      return;
+    }
+
+    setIsLoadingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setUserLocation(location);
+        setMapCenter(location);
+        setSelectedLocation(null);
+        setIsLoadingLocation(false);
+        console.log('Current location obtained:', location);
+      },
+      (error) => {
+        console.log('Error getting location:', error);
+        setIsLoadingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchValue.trim()) {
+      handleLocationSearch(searchValue.trim());
+    }
+  };
+
   return (
     <div className={`w-full h-screen flex flex-col lg:flex-row ${className}`} data-testid="dental-locator">
       {/* Sidebar with locations */}
@@ -96,6 +145,73 @@ export default function DentalLocator({
           <p className="text-primary-foreground/90 text-sm">
             Quality dental care across Texas with {DENTAL_LOCATIONS.length} convenient locations
           </p>
+        </div>
+
+        {/* Location Search Section */}
+        <div className="p-4 border-b bg-background">
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div>
+                <h3 className="font-heading font-semibold text-sm mb-3">Find Nearest Location</h3>
+                
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Enter address or zip code"
+                      value={searchValue}
+                      onChange={(e) => setSearchValue(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-location-search"
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    size="sm"
+                    disabled={!searchValue.trim()}
+                    data-testid="button-search-location"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Search
+                  </Button>
+                </form>
+
+                <div className="relative my-3">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">or</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleCurrentLocation}
+                  disabled={isLoadingLocation}
+                  data-testid="button-current-location"
+                >
+                  {isLoadingLocation ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      Getting location...
+                    </>
+                  ) : (
+                    <>
+                      <Crosshair className="w-4 h-4 mr-2" />
+                      Use My Location
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex-1 overflow-hidden">
@@ -195,11 +311,12 @@ export default function DentalLocator({
       {/* Map */}
       <div className="flex-1">
         <MapView
-          center={defaultCenter}
+          center={mapCenter}
           zoom={defaultZoom}
           stores={DENTAL_LOCATIONS}
           selectedStore={selectedLocation}
           onStoreSelect={handleLocationSelect}
+          userLocation={userLocation}
           className="h-full"
         />
       </div>
