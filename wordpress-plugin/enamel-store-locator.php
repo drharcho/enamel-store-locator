@@ -60,10 +60,17 @@ class EnamelStoreLocator {
             add_action('admin_menu', array($this, 'add_admin_menu'));
             add_action('admin_init', array($this, 'admin_init'));
             add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'));
+            add_action('add_meta_boxes', array($this, 'add_location_meta_boxes'));
+            add_action('save_post_clinic_location', array($this, 'save_location_meta'));
+            add_filter('manage_clinic_location_posts_columns', array($this, 'location_columns'));
+            add_action('manage_clinic_location_posts_custom_column', array($this, 'location_column_content'), 10, 2);
         }
         
         // Frontend hooks
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
+        
+        // AJAX hooks for Google Places API
+        add_action('wp_ajax_enamel_fetch_place_details', array($this, 'ajax_fetch_place_details'));
         
         // Create custom post type for locations
         $this->create_location_post_type();
@@ -73,6 +80,8 @@ class EnamelStoreLocator {
      * Plugin activation
      */
     public function activate() {
+        // Create custom post type first
+        $this->create_location_post_type();
         // Flush rewrite rules
         flush_rewrite_rules();
     }
@@ -81,7 +90,6 @@ class EnamelStoreLocator {
      * Plugin deactivation
      */
     public function deactivate() {
-        // Clean up (but keep data)
         flush_rewrite_rules();
     }
     
@@ -131,24 +139,14 @@ class EnamelStoreLocator {
             30
         );
         
-        // Settings submenu
+        // Dashboard submenu (same as main)
         add_submenu_page(
             'enamel-store-locator',
-            __('Settings', 'enamel-store-locator'),
-            __('Settings', 'enamel-store-locator'),
+            __('Dashboard', 'enamel-store-locator'),
+            __('Dashboard', 'enamel-store-locator'),
             'manage_options',
-            'enamel-store-locator-settings',
-            array($this, 'settings_page')
-        );
-        
-        // Map Settings submenu
-        add_submenu_page(
             'enamel-store-locator',
-            __('Map Settings', 'enamel-store-locator'),
-            __('Map Settings', 'enamel-store-locator'),
-            'manage_options',
-            'enamel-store-locator-map',
-            array($this, 'map_settings_page')
+            array($this, 'dashboard_page')
         );
         
         // Locations submenu (points to custom post type)
@@ -159,13 +157,32 @@ class EnamelStoreLocator {
             'manage_options',
             'edit.php?post_type=clinic_location'
         );
+        
+        // Settings submenu
+        add_submenu_page(
+            'enamel-store-locator',
+            __('Settings', 'enamel-store-locator'),
+            __('Settings', 'enamel-store-locator'),
+            'manage_options',
+            'enamel-store-locator-settings',
+            array($this, 'settings_page')
+        );
+        
+        // Branding submenu
+        add_submenu_page(
+            'enamel-store-locator',
+            __('Branding', 'enamel-store-locator'),
+            __('Branding', 'enamel-store-locator'),
+            'manage_options',
+            'enamel-store-locator-branding',
+            array($this, 'branding_page')
+        );
     }
     
     /**
      * Initialize admin settings
      */
     public function admin_init() {
-        // Register all settings with sanitization
         $this->register_settings();
     }
     
@@ -173,31 +190,32 @@ class EnamelStoreLocator {
      * Register all plugin settings
      */
     private function register_settings() {
+        // General settings
         $settings = array(
             'google_maps_api_key' => 'sanitize_text_field',
             'default_lat' => array($this, 'sanitize_latitude'),
             'default_lng' => array($this, 'sanitize_longitude'),
             'default_zoom' => array($this, 'sanitize_zoom_level'),
-            'default_radius' => 'absint',
             'header_main_title' => 'sanitize_text_field',
             'header_subtitle' => 'sanitize_textarea_field',
-            'search_section_title' => 'sanitize_text_field',
             'search_input_placeholder' => 'sanitize_text_field',
-            'search_button_text' => 'sanitize_text_field',
-            'location_button_text' => 'sanitize_text_field',
+            'schedule_button_text' => 'sanitize_text_field',
             'directions_button_text' => 'sanitize_text_field',
             'call_button_text' => 'sanitize_text_field',
-            'schedule_button_text' => 'sanitize_text_field',
-            'schedule_link_url' => 'esc_url_raw',
+            // Branding - Colors
             'primary_color' => 'sanitize_hex_color',
+            'secondary_color' => 'sanitize_hex_color',
             'accent_color' => 'sanitize_hex_color',
             'background_color' => 'sanitize_hex_color',
             'card_background' => 'sanitize_hex_color',
-            'primary_text' => 'sanitize_hex_color',
-            'secondary_text' => 'sanitize_hex_color',
-            'map_type' => array($this, 'sanitize_map_type'),
-            'marker_color' => 'sanitize_hex_color',
-            'enable_clustering' => array($this, 'sanitize_checkbox'),
+            'header_background' => 'sanitize_hex_color',
+            'text_primary' => 'sanitize_hex_color',
+            'text_secondary' => 'sanitize_hex_color',
+            'button_text_color' => 'sanitize_hex_color',
+            // Branding - Fonts
+            'primary_font' => 'sanitize_text_field',
+            'secondary_font' => 'sanitize_text_field',
+            'font_size_base' => 'absint',
         );
         
         foreach ($settings as $option_name => $sanitize_callback) {
@@ -208,27 +226,439 @@ class EnamelStoreLocator {
     }
     
     /**
+     * Add meta boxes for location post type
+     */
+    public function add_location_meta_boxes() {
+        add_meta_box(
+            'enamel_sl_google_place',
+            __('Google Places Integration', 'enamel-store-locator'),
+            array($this, 'google_place_meta_box'),
+            'clinic_location',
+            'normal',
+            'high'
+        );
+        
+        add_meta_box(
+            'enamel_sl_location_details',
+            __('Location Details', 'enamel-store-locator'),
+            array($this, 'location_details_meta_box'),
+            'clinic_location',
+            'normal',
+            'high'
+        );
+        
+        add_meta_box(
+            'enamel_sl_booking',
+            __('Booking & Links', 'enamel-store-locator'),
+            array($this, 'booking_meta_box'),
+            'clinic_location',
+            'side',
+            'high'
+        );
+    }
+    
+    /**
+     * Google Place meta box
+     */
+    public function google_place_meta_box($post) {
+        wp_nonce_field('enamel_sl_location_nonce', 'enamel_sl_nonce');
+        $place_id = get_post_meta($post->ID, '_enamel_sl_place_id', true);
+        ?>
+        <div class="enamel-sl-meta-box">
+            <p class="description" style="margin-bottom: 15px;">
+                <?php _e('Enter a Google Place ID to automatically fetch business details. You can find Place IDs using the', 'enamel-store-locator'); ?>
+                <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank"><?php _e('Google Place ID Finder', 'enamel-store-locator'); ?></a>.
+            </p>
+            
+            <table class="form-table">
+                <tr>
+                    <th><label for="enamel_sl_place_id"><?php _e('Google Place ID', 'enamel-store-locator'); ?></label></th>
+                    <td>
+                        <input type="text" id="enamel_sl_place_id" name="enamel_sl_place_id" value="<?php echo esc_attr($place_id); ?>" class="large-text" placeholder="ChIJ..." />
+                        <button type="button" id="enamel_sl_fetch_place" class="button button-secondary" style="margin-top: 5px;">
+                            <?php _e('Fetch Details from Google', 'enamel-store-locator'); ?>
+                        </button>
+                        <span id="enamel_sl_fetch_status" style="margin-left: 10px;"></span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Location details meta box
+     */
+    public function location_details_meta_box($post) {
+        $address = get_post_meta($post->ID, '_enamel_sl_address', true);
+        $city = get_post_meta($post->ID, '_enamel_sl_city', true);
+        $state = get_post_meta($post->ID, '_enamel_sl_state', true);
+        $zip = get_post_meta($post->ID, '_enamel_sl_zip', true);
+        $phone = get_post_meta($post->ID, '_enamel_sl_phone', true);
+        $lat = get_post_meta($post->ID, '_enamel_sl_lat', true);
+        $lng = get_post_meta($post->ID, '_enamel_sl_lng', true);
+        $hours = get_post_meta($post->ID, '_enamel_sl_hours', true);
+        $rating = get_post_meta($post->ID, '_enamel_sl_rating', true);
+        ?>
+        <div class="enamel-sl-meta-box">
+            <p class="description" style="margin-bottom: 15px;">
+                <?php _e('These fields can be auto-filled from Google Places or entered manually.', 'enamel-store-locator'); ?>
+            </p>
+            
+            <table class="form-table">
+                <tr>
+                    <th><label for="enamel_sl_address"><?php _e('Street Address', 'enamel-store-locator'); ?></label></th>
+                    <td><input type="text" id="enamel_sl_address" name="enamel_sl_address" value="<?php echo esc_attr($address); ?>" class="large-text" /></td>
+                </tr>
+                <tr>
+                    <th><label for="enamel_sl_city"><?php _e('City', 'enamel-store-locator'); ?></label></th>
+                    <td><input type="text" id="enamel_sl_city" name="enamel_sl_city" value="<?php echo esc_attr($city); ?>" class="regular-text" /></td>
+                </tr>
+                <tr>
+                    <th><label for="enamel_sl_state"><?php _e('State', 'enamel-store-locator'); ?></label></th>
+                    <td><input type="text" id="enamel_sl_state" name="enamel_sl_state" value="<?php echo esc_attr($state); ?>" class="small-text" /></td>
+                </tr>
+                <tr>
+                    <th><label for="enamel_sl_zip"><?php _e('ZIP Code', 'enamel-store-locator'); ?></label></th>
+                    <td><input type="text" id="enamel_sl_zip" name="enamel_sl_zip" value="<?php echo esc_attr($zip); ?>" class="small-text" /></td>
+                </tr>
+                <tr>
+                    <th><label for="enamel_sl_phone"><?php _e('Phone Number', 'enamel-store-locator'); ?></label></th>
+                    <td><input type="text" id="enamel_sl_phone" name="enamel_sl_phone" value="<?php echo esc_attr($phone); ?>" class="regular-text" placeholder="(512) 555-1234" /></td>
+                </tr>
+                <tr>
+                    <th><label><?php _e('Coordinates', 'enamel-store-locator'); ?></label></th>
+                    <td>
+                        <label for="enamel_sl_lat"><?php _e('Lat:', 'enamel-store-locator'); ?></label>
+                        <input type="text" id="enamel_sl_lat" name="enamel_sl_lat" value="<?php echo esc_attr($lat); ?>" class="small-text" />
+                        <label for="enamel_sl_lng" style="margin-left: 10px;"><?php _e('Lng:', 'enamel-store-locator'); ?></label>
+                        <input type="text" id="enamel_sl_lng" name="enamel_sl_lng" value="<?php echo esc_attr($lng); ?>" class="small-text" />
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="enamel_sl_hours"><?php _e('Business Hours', 'enamel-store-locator'); ?></label></th>
+                    <td>
+                        <textarea id="enamel_sl_hours" name="enamel_sl_hours" class="large-text" rows="4" placeholder="Mon-Fri: 8am-5pm&#10;Sat: 9am-2pm&#10;Sun: Closed"><?php echo esc_textarea($hours); ?></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="enamel_sl_rating"><?php _e('Google Rating', 'enamel-store-locator'); ?></label></th>
+                    <td><input type="text" id="enamel_sl_rating" name="enamel_sl_rating" value="<?php echo esc_attr($rating); ?>" class="small-text" readonly /> <span class="description"><?php _e('(Auto-fetched from Google)', 'enamel-store-locator'); ?></span></td>
+                </tr>
+            </table>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Booking meta box
+     */
+    public function booking_meta_box($post) {
+        $booking_url = get_post_meta($post->ID, '_enamel_sl_booking_url', true);
+        $gmb_url = get_post_meta($post->ID, '_enamel_sl_gmb_url', true);
+        $active = get_post_meta($post->ID, '_enamel_sl_active', true);
+        if ($active === '') $active = '1'; // Default to active
+        ?>
+        <div class="enamel-sl-meta-box">
+            <p>
+                <label for="enamel_sl_booking_url"><strong><?php _e('Booking URL', 'enamel-store-locator'); ?></strong></label><br>
+                <input type="url" id="enamel_sl_booking_url" name="enamel_sl_booking_url" value="<?php echo esc_url($booking_url); ?>" class="large-text" placeholder="https://booking.example.com/location1" />
+                <span class="description"><?php _e('Unique booking link for this location', 'enamel-store-locator'); ?></span>
+            </p>
+            
+            <p>
+                <label for="enamel_sl_gmb_url"><strong><?php _e('Google My Business URL', 'enamel-store-locator'); ?></strong></label><br>
+                <input type="url" id="enamel_sl_gmb_url" name="enamel_sl_gmb_url" value="<?php echo esc_url($gmb_url); ?>" class="large-text" placeholder="https://g.page/your-business" />
+                <span class="description"><?php _e('Link to Google My Business page', 'enamel-store-locator'); ?></span>
+            </p>
+            
+            <p>
+                <label>
+                    <input type="checkbox" name="enamel_sl_active" value="1" <?php checked($active, '1'); ?> />
+                    <strong><?php _e('Active Location', 'enamel-store-locator'); ?></strong>
+                </label><br>
+                <span class="description"><?php _e('Uncheck to hide this location from the map', 'enamel-store-locator'); ?></span>
+            </p>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Save location meta data
+     */
+    public function save_location_meta($post_id) {
+        // Verify nonce
+        if (!isset($_POST['enamel_sl_nonce']) || !wp_verify_nonce($_POST['enamel_sl_nonce'], 'enamel_sl_location_nonce')) {
+            return;
+        }
+        
+        // Check autosave
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+        
+        // Check permissions
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+        
+        // Save meta fields
+        $fields = array(
+            'place_id' => 'sanitize_text_field',
+            'address' => 'sanitize_text_field',
+            'city' => 'sanitize_text_field',
+            'state' => 'sanitize_text_field',
+            'zip' => 'sanitize_text_field',
+            'phone' => 'sanitize_text_field',
+            'lat' => array($this, 'sanitize_latitude'),
+            'lng' => array($this, 'sanitize_longitude'),
+            'hours' => 'sanitize_textarea_field',
+            'rating' => 'sanitize_text_field',
+            'booking_url' => 'esc_url_raw',
+            'gmb_url' => 'esc_url_raw',
+        );
+        
+        foreach ($fields as $field => $sanitize_callback) {
+            if (isset($_POST['enamel_sl_' . $field])) {
+                $value = $_POST['enamel_sl_' . $field];
+                if (is_callable($sanitize_callback)) {
+                    $value = call_user_func($sanitize_callback, $value);
+                }
+                update_post_meta($post_id, '_enamel_sl_' . $field, $value);
+            }
+        }
+        
+        // Handle checkbox separately
+        $active = isset($_POST['enamel_sl_active']) ? '1' : '0';
+        update_post_meta($post_id, '_enamel_sl_active', $active);
+    }
+    
+    /**
+     * Custom columns for location list
+     */
+    public function location_columns($columns) {
+        $new_columns = array();
+        $new_columns['cb'] = $columns['cb'];
+        $new_columns['title'] = __('Location Name', 'enamel-store-locator');
+        $new_columns['address'] = __('Address', 'enamel-store-locator');
+        $new_columns['phone'] = __('Phone', 'enamel-store-locator');
+        $new_columns['booking'] = __('Booking URL', 'enamel-store-locator');
+        $new_columns['active'] = __('Status', 'enamel-store-locator');
+        $new_columns['date'] = $columns['date'];
+        return $new_columns;
+    }
+    
+    /**
+     * Custom column content
+     */
+    public function location_column_content($column, $post_id) {
+        switch ($column) {
+            case 'address':
+                $address = get_post_meta($post_id, '_enamel_sl_address', true);
+                $city = get_post_meta($post_id, '_enamel_sl_city', true);
+                $state = get_post_meta($post_id, '_enamel_sl_state', true);
+                echo esc_html($address);
+                if ($city || $state) {
+                    echo '<br><small>' . esc_html($city . ', ' . $state) . '</small>';
+                }
+                break;
+            case 'phone':
+                echo esc_html(get_post_meta($post_id, '_enamel_sl_phone', true));
+                break;
+            case 'booking':
+                $url = get_post_meta($post_id, '_enamel_sl_booking_url', true);
+                if ($url) {
+                    echo '<a href="' . esc_url($url) . '" target="_blank" class="button button-small">' . __('View', 'enamel-store-locator') . '</a>';
+                } else {
+                    echo '<span style="color: #999;">' . __('Not set', 'enamel-store-locator') . '</span>';
+                }
+                break;
+            case 'active':
+                $active = get_post_meta($post_id, '_enamel_sl_active', true);
+                if ($active === '' || $active === '1') {
+                    echo '<span style="color: green;">●</span> ' . __('Active', 'enamel-store-locator');
+                } else {
+                    echo '<span style="color: #ccc;">●</span> ' . __('Inactive', 'enamel-store-locator');
+                }
+                break;
+        }
+    }
+    
+    /**
+     * AJAX handler for fetching Google Place details
+     */
+    public function ajax_fetch_place_details() {
+        check_ajax_referer('enamel_sl_admin_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'enamel-store-locator'));
+        }
+        
+        $place_id = sanitize_text_field($_POST['place_id']);
+        $api_key = get_option('enamel_sl_google_maps_api_key');
+        
+        if (empty($api_key)) {
+            wp_send_json_error(__('Google Maps API key not configured. Please add it in Settings.', 'enamel-store-locator'));
+        }
+        
+        if (empty($place_id)) {
+            wp_send_json_error(__('Please enter a Place ID', 'enamel-store-locator'));
+        }
+        
+        // Call Google Places API
+        $url = add_query_arg(array(
+            'place_id' => $place_id,
+            'fields' => 'name,formatted_address,formatted_phone_number,geometry,opening_hours,rating,url,address_components',
+            'key' => $api_key
+        ), 'https://maps.googleapis.com/maps/api/place/details/json');
+        
+        $response = wp_remote_get($url);
+        
+        if (is_wp_error($response)) {
+            wp_send_json_error(__('Failed to connect to Google API', 'enamel-store-locator'));
+        }
+        
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        
+        if ($body['status'] !== 'OK') {
+            wp_send_json_error(sprintf(__('Google API Error: %s', 'enamel-store-locator'), $body['status']));
+        }
+        
+        $result = $body['result'];
+        
+        // Parse address components
+        $city = '';
+        $state = '';
+        $zip = '';
+        $street_number = '';
+        $route = '';
+        
+        if (isset($result['address_components'])) {
+            foreach ($result['address_components'] as $component) {
+                if (in_array('locality', $component['types'])) {
+                    $city = $component['long_name'];
+                }
+                if (in_array('administrative_area_level_1', $component['types'])) {
+                    $state = $component['short_name'];
+                }
+                if (in_array('postal_code', $component['types'])) {
+                    $zip = $component['long_name'];
+                }
+                if (in_array('street_number', $component['types'])) {
+                    $street_number = $component['long_name'];
+                }
+                if (in_array('route', $component['types'])) {
+                    $route = $component['long_name'];
+                }
+            }
+        }
+        
+        $address = trim($street_number . ' ' . $route);
+        
+        // Format hours
+        $hours = '';
+        if (isset($result['opening_hours']['weekday_text'])) {
+            $hours = implode("\n", $result['opening_hours']['weekday_text']);
+        }
+        
+        // Helper to limit string length for safety
+        $limit = function($str, $max = 255) {
+            return mb_substr(sanitize_text_field($str), 0, $max);
+        };
+        
+        // Validate lat/lng are finite numbers
+        $lat = isset($result['geometry']['location']['lat']) ? floatval($result['geometry']['location']['lat']) : 0;
+        $lng = isset($result['geometry']['location']['lng']) ? floatval($result['geometry']['location']['lng']) : 0;
+        if (!is_finite($lat)) $lat = 0;
+        if (!is_finite($lng)) $lng = 0;
+        
+        // Validate rating is between 0 and 5
+        $rating = isset($result['rating']) ? floatval($result['rating']) : 0;
+        $rating = max(0, min(5, $rating));
+        
+        // Sanitize all data with length limits
+        $data = array(
+            'name' => $limit($result['name'] ?? '', 200),
+            'address' => $limit($address, 300),
+            'city' => $limit($city, 100),
+            'state' => $limit($state, 50),
+            'zip' => $limit($zip, 20),
+            'phone' => $limit($result['formatted_phone_number'] ?? '', 30),
+            'lat' => $lat,
+            'lng' => $lng,
+            'hours' => mb_substr(sanitize_textarea_field($hours), 0, 1000),
+            'rating' => $rating,
+            'gmb_url' => esc_url_raw(mb_substr($result['url'] ?? '', 0, 500))
+        );
+        
+        wp_send_json_success($data);
+    }
+    
+    /**
      * Dashboard page
      */
     public function dashboard_page() {
+        $location_count = intval(wp_count_posts('clinic_location')->publish);
+        $api_key = get_option('enamel_sl_google_maps_api_key');
         ?>
         <div class="wrap">
-            <h1><?php _e('Enamel Store Locator', 'enamel-store-locator'); ?></h1>
+            <h1><?php esc_html_e('Enamel Store Locator', 'enamel-store-locator'); ?></h1>
             
-            <div class="postbox">
-                <h2 class="hndle"><?php _e('Quick Setup', 'enamel-store-locator'); ?></h2>
-                <div class="inside">
-                    <h3><?php _e('How to Use:', 'enamel-store-locator'); ?></h3>
-                    <ol>
-                        <li><?php _e('Add your Google Maps API key in Settings', 'enamel-store-locator'); ?></li>
-                        <li><?php _e('Add clinic locations in Locations', 'enamel-store-locator'); ?></li>
-                        <li><?php _e('Copy this shortcode to any page:', 'enamel-store-locator'); ?> <code>[enamel_store_locator]</code></li>
-                    </ol>
-                    
-                    <h3><?php _e('Statistics', 'enamel-store-locator'); ?></h3>
-                    <p><?php printf(__('Active Locations: %d', 'enamel-store-locator'), wp_count_posts('clinic_location')->publish); ?></p>
-                    <p><?php echo get_option('enamel_sl_google_maps_api_key') ? __('Google Maps API Key: Configured ✓', 'enamel-store-locator') : __('Google Maps API Key: Not configured', 'enamel-store-locator'); ?></p>
+            <div class="enamel-sl-dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                
+                <div class="postbox" style="margin: 0;">
+                    <h2 class="hndle" style="padding: 12px;"><?php esc_html_e('Quick Stats', 'enamel-store-locator'); ?></h2>
+                    <div class="inside">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center;">
+                            <div style="background: #f0f0f1; padding: 20px; border-radius: 8px;">
+                                <div style="font-size: 36px; font-weight: bold; color: #7D55C7;"><?php echo esc_html($location_count); ?></div>
+                                <div style="color: #666;"><?php esc_html_e('Locations', 'enamel-store-locator'); ?></div>
+                            </div>
+                            <div style="background: #f0f0f1; padding: 20px; border-radius: 8px;">
+                                <div style="font-size: 36px; font-weight: bold; color: <?php echo $api_key ? '#00a32a' : '#d63638'; ?>;"><?php echo $api_key ? '&#10003;' : '&#10007;'; ?></div>
+                                <div style="color: #666;"><?php esc_html_e('API Key', 'enamel-store-locator'); ?></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                
+                <div class="postbox" style="margin: 0;">
+                    <h2 class="hndle" style="padding: 12px;"><?php esc_html_e('Quick Setup', 'enamel-store-locator'); ?></h2>
+                    <div class="inside">
+                        <ol style="margin-left: 20px;">
+                            <li style="margin-bottom: 10px;">
+                                <?php if ($api_key): ?>
+                                    <span style="color: #00a32a;">&#10003;</span>
+                                <?php else: ?>
+                                    <a href="<?php echo esc_url(admin_url('admin.php?page=enamel-store-locator-settings')); ?>"><?php esc_html_e('Add Google Maps API Key', 'enamel-store-locator'); ?></a>
+                                <?php endif; ?>
+                                <?php if ($api_key) esc_html_e('Google Maps API configured', 'enamel-store-locator'); ?>
+                            </li>
+                            <li style="margin-bottom: 10px;">
+                                <a href="<?php echo esc_url(admin_url('post-new.php?post_type=clinic_location')); ?>"><?php esc_html_e('Add Clinic Locations', 'enamel-store-locator'); ?></a>
+                            </li>
+                            <li style="margin-bottom: 10px;">
+                                <a href="<?php echo esc_url(admin_url('admin.php?page=enamel-store-locator-branding')); ?>"><?php esc_html_e('Customize Branding', 'enamel-store-locator'); ?></a>
+                            </li>
+                            <li><?php esc_html_e('Add shortcode to any page:', 'enamel-store-locator'); ?> <code>[enamel_store_locator]</code></li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div class="postbox" style="margin: 0; grid-column: 1 / -1;">
+                    <h2 class="hndle" style="padding: 12px;"><?php esc_html_e('Shortcode Usage', 'enamel-store-locator'); ?></h2>
+                    <div class="inside">
+                        <p><?php esc_html_e('Copy this shortcode to any page or Elementor Custom HTML widget:', 'enamel-store-locator'); ?></p>
+                        <code style="display: block; padding: 15px; background: #f0f0f1; border-radius: 4px; font-size: 14px;">[enamel_store_locator]</code>
+                        
+                        <h4><?php esc_html_e('Shortcode Options:', 'enamel-store-locator'); ?></h4>
+                        <ul style="margin-left: 20px;">
+                            <li><code>[enamel_store_locator height="600px"]</code> - <?php esc_html_e('Custom height', 'enamel-store-locator'); ?></li>
+                            <li><code>[enamel_store_locator zoom="12"]</code> - <?php esc_html_e('Custom zoom level', 'enamel-store-locator'); ?></li>
+                        </ul>
+                    </div>
+                </div>
+                
             </div>
         </div>
         <?php
@@ -244,15 +674,47 @@ class EnamelStoreLocator {
             <form method="post" action="options.php">
                 <?php settings_fields('enamel_sl_settings'); ?>
                 
-                <h2><?php _e('Content & Text', 'enamel-store-locator'); ?></h2>
+                <h2><?php _e('Google Maps API', 'enamel-store-locator'); ?></h2>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="enamel_sl_google_maps_api_key"><?php _e('API Key', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_google_maps_api_key" name="enamel_sl_google_maps_api_key" value="<?php echo esc_attr(get_option('enamel_sl_google_maps_api_key', '')); ?>" class="large-text" />
+                            <p class="description"><?php _e('Required for Maps and Places API. Get one from', 'enamel-store-locator'); ?> <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <h2><?php _e('Map Defaults', 'enamel-store-locator'); ?></h2>
+                <table class="form-table">
+                    <tr>
+                        <th><label><?php _e('Default Center', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label for="enamel_sl_default_lat"><?php _e('Latitude:', 'enamel-store-locator'); ?></label>
+                            <input type="text" id="enamel_sl_default_lat" name="enamel_sl_default_lat" value="<?php echo esc_attr(get_option('enamel_sl_default_lat', '30.3072')); ?>" class="small-text" />
+                            <label for="enamel_sl_default_lng" style="margin-left: 15px;"><?php _e('Longitude:', 'enamel-store-locator'); ?></label>
+                            <input type="text" id="enamel_sl_default_lng" name="enamel_sl_default_lng" value="<?php echo esc_attr(get_option('enamel_sl_default_lng', '-97.7560')); ?>" class="small-text" />
+                            <p class="description"><?php _e('Default map center (Austin, TX by default)', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_default_zoom"><?php _e('Default Zoom', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="number" id="enamel_sl_default_zoom" name="enamel_sl_default_zoom" value="<?php echo esc_attr(get_option('enamel_sl_default_zoom', '10')); ?>" min="1" max="20" class="small-text" />
+                            <p class="description"><?php _e('1 (world) to 20 (building level)', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <h2><?php _e('Text & Labels', 'enamel-store-locator'); ?></h2>
                 <table class="form-table">
                     <tr>
                         <th><label for="enamel_sl_header_main_title"><?php _e('Header Title', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_header_main_title" name="enamel_sl_header_main_title" value="<?php echo esc_attr(get_option('enamel_sl_header_main_title', 'Find Your Nearest Location')); ?>" class="regular-text" /></td>
+                        <td><input type="text" id="enamel_sl_header_main_title" name="enamel_sl_header_main_title" value="<?php echo esc_attr(get_option('enamel_sl_header_main_title', 'Find Your Nearest Location')); ?>" class="large-text" /></td>
                     </tr>
                     <tr>
                         <th><label for="enamel_sl_header_subtitle"><?php _e('Header Subtitle', 'enamel-store-locator'); ?></label></th>
-                        <td><textarea id="enamel_sl_header_subtitle" name="enamel_sl_header_subtitle" class="regular-text" rows="3"><?php echo esc_textarea(get_option('enamel_sl_header_subtitle', 'Quality dental care across Texas with convenient locations')); ?></textarea></td>
+                        <td><textarea id="enamel_sl_header_subtitle" name="enamel_sl_header_subtitle" class="large-text" rows="2"><?php echo esc_textarea(get_option('enamel_sl_header_subtitle', 'Quality dental care across Texas with convenient locations')); ?></textarea></td>
                     </tr>
                     <tr>
                         <th><label for="enamel_sl_search_input_placeholder"><?php _e('Search Placeholder', 'enamel-store-locator'); ?></label></th>
@@ -263,20 +725,12 @@ class EnamelStoreLocator {
                         <td><input type="text" id="enamel_sl_schedule_button_text" name="enamel_sl_schedule_button_text" value="<?php echo esc_attr(get_option('enamel_sl_schedule_button_text', 'Schedule Online')); ?>" class="regular-text" /></td>
                     </tr>
                     <tr>
-                        <th><label for="enamel_sl_schedule_link_url"><?php _e('Schedule Link URL', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="url" id="enamel_sl_schedule_link_url" name="enamel_sl_schedule_link_url" value="<?php echo esc_attr(get_option('enamel_sl_schedule_link_url', '')); ?>" class="regular-text" placeholder="https://your-booking-system.com" /></td>
-                    </tr>
-                </table>
-                
-                <h2><?php _e('Colors & Branding', 'enamel-store-locator'); ?></h2>
-                <table class="form-table">
-                    <tr>
-                        <th><label for="enamel_sl_primary_color"><?php _e('Primary Color', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_primary_color" name="enamel_sl_primary_color" value="<?php echo esc_attr(get_option('enamel_sl_primary_color', '#7D55C7')); ?>" class="color-picker" data-alpha="true" /></td>
+                        <th><label for="enamel_sl_directions_button_text"><?php _e('Directions Button Text', 'enamel-store-locator'); ?></label></th>
+                        <td><input type="text" id="enamel_sl_directions_button_text" name="enamel_sl_directions_button_text" value="<?php echo esc_attr(get_option('enamel_sl_directions_button_text', 'Get Directions')); ?>" class="regular-text" /></td>
                     </tr>
                     <tr>
-                        <th><label for="enamel_sl_accent_color"><?php _e('Accent Color', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_accent_color" name="enamel_sl_accent_color" value="<?php echo esc_attr(get_option('enamel_sl_accent_color', '#E56B10')); ?>" class="color-picker" data-alpha="true" /></td>
+                        <th><label for="enamel_sl_call_button_text"><?php _e('Call Button Text', 'enamel-store-locator'); ?></label></th>
+                        <td><input type="text" id="enamel_sl_call_button_text" name="enamel_sl_call_button_text" value="<?php echo esc_attr(get_option('enamel_sl_call_button_text', 'Call Now')); ?>" class="regular-text" /></td>
                     </tr>
                 </table>
                 
@@ -287,37 +741,140 @@ class EnamelStoreLocator {
     }
     
     /**
-     * Map settings page
+     * Branding page
      */
-    public function map_settings_page() {
+    public function branding_page() {
+        // Available Google Fonts
+        $google_fonts = array(
+            'Montserrat' => 'Montserrat',
+            'Rubik' => 'Rubik',
+            'Open Sans' => 'Open Sans',
+            'Roboto' => 'Roboto',
+            'Lato' => 'Lato',
+            'Poppins' => 'Poppins',
+            'Inter' => 'Inter',
+            'Nunito' => 'Nunito',
+            'Raleway' => 'Raleway',
+            'Work Sans' => 'Work Sans',
+            'Playfair Display' => 'Playfair Display',
+            'Merriweather' => 'Merriweather',
+            'Source Sans Pro' => 'Source Sans Pro',
+            'PT Sans' => 'PT Sans',
+            'Oswald' => 'Oswald',
+        );
         ?>
         <div class="wrap">
-            <h1><?php _e('Map Settings', 'enamel-store-locator'); ?></h1>
+            <h1><?php _e('Branding & Appearance', 'enamel-store-locator'); ?></h1>
             <form method="post" action="options.php">
                 <?php settings_fields('enamel_sl_settings'); ?>
                 
+                <h2><?php _e('Typography', 'enamel-store-locator'); ?></h2>
                 <table class="form-table">
                     <tr>
-                        <th><label for="enamel_sl_google_maps_api_key"><?php _e('Google Maps API Key', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_google_maps_api_key" name="enamel_sl_google_maps_api_key" value="<?php echo esc_attr(get_option('enamel_sl_google_maps_api_key', '')); ?>" class="regular-text" /></td>
+                        <th><label for="enamel_sl_primary_font"><?php _e('Primary Font (Headings)', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <select id="enamel_sl_primary_font" name="enamel_sl_primary_font" class="regular-text">
+                                <?php
+                                $current_primary = get_option('enamel_sl_primary_font', 'Montserrat');
+                                foreach ($google_fonts as $value => $label) {
+                                    printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($current_primary, $value, false), esc_html($label));
+                                }
+                                ?>
+                            </select>
+                        </td>
                     </tr>
                     <tr>
-                        <th><label for="enamel_sl_default_lat"><?php _e('Default Latitude', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="number" id="enamel_sl_default_lat" name="enamel_sl_default_lat" value="<?php echo esc_attr(get_option('enamel_sl_default_lat', '30.3072')); ?>" step="0.0001" class="small-text" /></td>
+                        <th><label for="enamel_sl_secondary_font"><?php _e('Secondary Font (Body Text)', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <select id="enamel_sl_secondary_font" name="enamel_sl_secondary_font" class="regular-text">
+                                <?php
+                                $current_secondary = get_option('enamel_sl_secondary_font', 'Rubik');
+                                foreach ($google_fonts as $value => $label) {
+                                    printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($current_secondary, $value, false), esc_html($label));
+                                }
+                                ?>
+                            </select>
+                        </td>
                     </tr>
                     <tr>
-                        <th><label for="enamel_sl_default_lng"><?php _e('Default Longitude', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="number" id="enamel_sl_default_lng" name="enamel_sl_default_lng" value="<?php echo esc_attr(get_option('enamel_sl_default_lng', '-97.7560')); ?>" step="0.0001" class="small-text" /></td>
+                        <th><label for="enamel_sl_font_size_base"><?php _e('Base Font Size (px)', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="number" id="enamel_sl_font_size_base" name="enamel_sl_font_size_base" value="<?php echo esc_attr(get_option('enamel_sl_font_size_base', '16')); ?>" min="12" max="24" class="small-text" />
+                        </td>
+                    </tr>
+                </table>
+                
+                <h2><?php _e('Colors', 'enamel-store-locator'); ?></h2>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="enamel_sl_primary_color"><?php _e('Primary Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_primary_color" name="enamel_sl_primary_color" value="<?php echo esc_attr(get_option('enamel_sl_primary_color', '#7D55C7')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Main brand color (buttons, highlights)', 'enamel-store-locator'); ?></p>
+                        </td>
                     </tr>
                     <tr>
-                        <th><label for="enamel_sl_default_zoom"><?php _e('Default Zoom Level', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="number" id="enamel_sl_default_zoom" name="enamel_sl_default_zoom" value="<?php echo esc_attr(get_option('enamel_sl_default_zoom', '10')); ?>" min="1" max="20" class="small-text" /></td>
+                        <th><label for="enamel_sl_secondary_color"><?php _e('Secondary Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_secondary_color" name="enamel_sl_secondary_color" value="<?php echo esc_attr(get_option('enamel_sl_secondary_color', '#5a3d96')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Secondary brand color', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_accent_color"><?php _e('Accent Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_accent_color" name="enamel_sl_accent_color" value="<?php echo esc_attr(get_option('enamel_sl_accent_color', '#E56B10')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Accent color for highlights and CTAs', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_background_color"><?php _e('Background Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_background_color" name="enamel_sl_background_color" value="<?php echo esc_attr(get_option('enamel_sl_background_color', '#FFFFFF')); ?>" class="enamel-color-picker" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_card_background"><?php _e('Card Background', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_card_background" name="enamel_sl_card_background" value="<?php echo esc_attr(get_option('enamel_sl_card_background', '#F8F9FA')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Background color for location cards', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_header_background"><?php _e('Header Background', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_header_background" name="enamel_sl_header_background" value="<?php echo esc_attr(get_option('enamel_sl_header_background', '#7D55C7')); ?>" class="enamel-color-picker" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_text_primary"><?php _e('Primary Text Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_text_primary" name="enamel_sl_text_primary" value="<?php echo esc_attr(get_option('enamel_sl_text_primary', '#231942')); ?>" class="enamel-color-picker" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_text_secondary"><?php _e('Secondary Text Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_text_secondary" name="enamel_sl_text_secondary" value="<?php echo esc_attr(get_option('enamel_sl_text_secondary', '#6B7280')); ?>" class="enamel-color-picker" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_button_text_color"><?php _e('Button Text Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_button_text_color" name="enamel_sl_button_text_color" value="<?php echo esc_attr(get_option('enamel_sl_button_text_color', '#FFFFFF')); ?>" class="enamel-color-picker" />
+                        </td>
                     </tr>
                 </table>
                 
                 <?php submit_button(); ?>
             </form>
         </div>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            $('.enamel-color-picker').wpColorPicker();
+        });
+        </script>
         <?php
     }
     
@@ -325,7 +882,6 @@ class EnamelStoreLocator {
      * Shortcode handler - renders the store locator
      */
     public function render_store_locator($atts) {
-        // Parse and sanitize shortcode attributes
         $atts = shortcode_atts(array(
             'center_lat' => get_option('enamel_sl_default_lat', 30.3072),
             'center_lng' => get_option('enamel_sl_default_lng', -97.7560),
@@ -334,22 +890,390 @@ class EnamelStoreLocator {
             'width' => '100%'
         ), $atts, 'enamel_store_locator');
         
-        // Sanitize attributes
-        $atts['center_lat'] = $this->sanitize_latitude($atts['center_lat']);
-        $atts['center_lng'] = $this->sanitize_longitude($atts['center_lng']);
-        $atts['zoom'] = $this->sanitize_zoom_level($atts['zoom']);
-        $atts['height'] = sanitize_text_field($atts['height']);
-        $atts['width'] = sanitize_text_field($atts['width']);
+        // Get all active locations
+        $locations = $this->get_all_locations();
+        
+        // Get settings
+        $settings = $this->get_frontend_settings();
         
         // Generate unique container ID
         $container_id = 'enamel-store-locator-' . uniqid();
         
-        // Return placeholder - the React app would load here
-        return sprintf(
-            '<div id="%s" class="enamel-store-locator-container" style="width: %s; height: %s; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><p style="color: #999; text-align: center;">Store Locator Loading...<br><small>Add your Google Maps API key in Store Locator > Map Settings</small></p></div>',
-            esc_attr($container_id),
-            esc_attr($atts['width']),
-            esc_attr($atts['height'])
+        // Build the HTML output
+        ob_start();
+        ?>
+        <div id="<?php echo esc_attr($container_id); ?>" class="enamel-store-locator-container" style="width: <?php echo esc_attr($atts['width']); ?>; min-height: <?php echo esc_attr($atts['height']); ?>;">
+            
+            <style>
+                #<?php echo esc_attr($container_id); ?> {
+                    font-family: <?php echo esc_attr($settings['secondary_font']); ?>, sans-serif;
+                    font-size: <?php echo esc_attr($settings['font_size_base']); ?>px;
+                    background: <?php echo esc_attr($settings['background_color']); ?>;
+                    color: <?php echo esc_attr($settings['text_primary']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> h1, 
+                #<?php echo esc_attr($container_id); ?> h2, 
+                #<?php echo esc_attr($container_id); ?> h3 {
+                    font-family: <?php echo esc_attr($settings['primary_font']); ?>, sans-serif;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-header {
+                    background: <?php echo esc_attr($settings['header_background']); ?>;
+                    color: #fff;
+                    padding: 30px 20px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-content {
+                    display: flex;
+                    flex-wrap: wrap;
+                    min-height: 400px;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-sidebar {
+                    width: 350px;
+                    max-height: 500px;
+                    overflow-y: auto;
+                    padding: 15px;
+                    background: #f9f9f9;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-map {
+                    flex: 1;
+                    min-width: 300px;
+                    min-height: 400px;
+                    background: #e5e5e5;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-card {
+                    background: <?php echo esc_attr($settings['card_background']); ?>;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 10px;
+                    border: 1px solid #e0e0e0;
+                    cursor: pointer;
+                    transition: box-shadow 0.2s, transform 0.2s;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-card:hover {
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    transform: translateY(-2px);
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-name {
+                    font-weight: 600;
+                    font-size: 1.1em;
+                    margin-bottom: 8px;
+                    color: <?php echo esc_attr($settings['text_primary']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-address {
+                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
+                    font-size: 0.9em;
+                    margin-bottom: 8px;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-phone {
+                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
+                    font-size: 0.9em;
+                    margin-bottom: 12px;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-buttons {
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-btn {
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 0.85em;
+                    font-weight: 500;
+                    text-decoration: none;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    cursor: pointer;
+                    border: none;
+                    transition: opacity 0.2s;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-btn:hover {
+                    opacity: 0.9;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-btn-primary {
+                    background: <?php echo esc_attr($settings['primary_color']); ?>;
+                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-btn-accent {
+                    background: <?php echo esc_attr($settings['accent_color']); ?>;
+                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-btn-outline {
+                    background: transparent;
+                    border: 1px solid <?php echo esc_attr($settings['primary_color']); ?>;
+                    color: <?php echo esc_attr($settings['primary_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-no-locations {
+                    padding: 40px;
+                    text-align: center;
+                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
+                }
+                @media (max-width: 768px) {
+                    #<?php echo esc_attr($container_id); ?> .esl-content {
+                        flex-direction: column;
+                    }
+                    #<?php echo esc_attr($container_id); ?> .esl-sidebar {
+                        width: 100%;
+                        max-height: 300px;
+                    }
+                }
+            </style>
+            
+            <div class="esl-header">
+                <h2 style="margin: 0 0 10px 0; font-size: 1.8em;"><?php echo esc_html($settings['header_main_title']); ?></h2>
+                <p style="margin: 0; opacity: 0.9;"><?php echo esc_html($settings['header_subtitle']); ?></p>
+            </div>
+            
+            <div class="esl-content">
+                <div class="esl-sidebar">
+                    <?php if (empty($locations)): ?>
+                        <div class="esl-no-locations">
+                            <p><?php _e('No locations found. Add locations in the WordPress admin.', 'enamel-store-locator'); ?></p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($locations as $location): ?>
+                            <div class="esl-location-card" data-lat="<?php echo esc_attr($location['lat']); ?>" data-lng="<?php echo esc_attr($location['lng']); ?>">
+                                <div class="esl-location-name"><?php echo esc_html($location['name']); ?></div>
+                                <div class="esl-location-address">
+                                    <?php echo esc_html($location['address']); ?><br>
+                                    <?php echo esc_html($location['city'] . ', ' . $location['state'] . ' ' . $location['zip']); ?>
+                                </div>
+                                <?php if ($location['phone']): ?>
+                                    <div class="esl-location-phone"><?php echo esc_html($location['phone']); ?></div>
+                                <?php endif; ?>
+                                <div class="esl-buttons">
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=<?php echo esc_attr($location['lat']); ?>,<?php echo esc_attr($location['lng']); ?>" target="_blank" class="esl-btn esl-btn-primary">
+                                        <?php echo esc_html($settings['directions_button_text']); ?>
+                                    </a>
+                                    <?php if ($location['booking_url']): ?>
+                                        <a href="<?php echo esc_url($location['booking_url']); ?>" target="_blank" class="esl-btn esl-btn-accent">
+                                            <?php echo esc_html($settings['schedule_button_text']); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ($location['phone']): ?>
+                                        <a href="tel:<?php echo esc_attr(preg_replace('/[^0-9]/', '', $location['phone'])); ?>" class="esl-btn esl-btn-outline">
+                                            <?php echo esc_html($settings['call_button_text']); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="esl-map" id="<?php echo esc_attr($container_id); ?>-map">
+                    <!-- Google Map will be initialized here -->
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0;">
+                        <p style="color: #999; text-align: center;">
+                            <?php if (!get_option('enamel_sl_google_maps_api_key')): ?>
+                                <?php _e('Add your Google Maps API key in Settings to display the map', 'enamel-store-locator'); ?>
+                            <?php else: ?>
+                                <?php _e('Loading map...', 'enamel-store-locator'); ?>
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <?php 
+        $api_key = get_option('enamel_sl_google_maps_api_key');
+        if ($api_key): 
+            // Prepare safe data for JavaScript - use wp_json_encode with proper flags
+            $safe_locations = wp_json_encode($locations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+            $safe_container_id = esc_js($container_id);
+            $safe_primary_color = esc_js(sanitize_hex_color($settings['primary_color']));
+            $safe_accent_color = esc_js(sanitize_hex_color($settings['accent_color']));
+            $safe_api_key = esc_js(sanitize_text_field($api_key));
+        ?>
+        <script>
+        (function() {
+            var locations = <?php echo $safe_locations; ?>;
+            var mapContainerId = '<?php echo $safe_container_id; ?>-map';
+            var containerId = '<?php echo $safe_container_id; ?>';
+            var defaultCenter = { lat: <?php echo floatval($atts['center_lat']); ?>, lng: <?php echo floatval($atts['center_lng']); ?> };
+            var defaultZoom = <?php echo intval($atts['zoom']); ?>;
+            var primaryColor = '<?php echo $safe_primary_color; ?>';
+            var accentColor = '<?php echo $safe_accent_color; ?>';
+            
+            // Helper function to escape HTML for info windows
+            function escapeHtml(text) {
+                if (!text) return '';
+                var div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            function initMap() {
+                var mapContainer = document.getElementById(mapContainerId);
+                if (!mapContainer) return;
+                mapContainer.innerHTML = '';
+                
+                var map = new google.maps.Map(mapContainer, {
+                    center: defaultCenter,
+                    zoom: defaultZoom,
+                    styles: [
+                        { featureType: "poi", stylers: [{ visibility: "off" }] }
+                    ]
+                });
+                
+                var bounds = new google.maps.LatLngBounds();
+                var markers = [];
+                
+                locations.forEach(function(location) {
+                    // Validate coordinates are finite numbers
+                    var lat = parseFloat(location.lat);
+                    var lng = parseFloat(location.lng);
+                    if (!isFinite(lat) || !isFinite(lng)) return;
+                    
+                    var position = { lat: lat, lng: lng };
+                    
+                    // Pre-escape all strings for safe HTML insertion
+                    var safeName = escapeHtml(String(location.name || ''));
+                    var safeAddress = escapeHtml(String(location.address || ''));
+                    var safeCity = escapeHtml(String(location.city || ''));
+                    var safeState = escapeHtml(String(location.state || ''));
+                    var safeZip = escapeHtml(String(location.zip || ''));
+                    var safePhone = escapeHtml(String(location.phone || ''));
+                    
+                    var marker = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        title: safeName
+                    });
+                    
+                    // Build info window with pre-escaped content
+                    var infoContent = '<div style="padding: 10px; max-width: 250px;">' +
+                        '<h3 style="margin: 0 0 8px 0; font-size: 16px;">' + safeName + '</h3>' +
+                        '<p style="margin: 0 0 8px 0; font-size: 13px; color: #666;">' + safeAddress + '<br>' + safeCity + ', ' + safeState + ' ' + safeZip + '</p>' +
+                        (safePhone ? '<p style="margin: 0 0 10px 0; font-size: 13px;">' + safePhone + '</p>' : '') +
+                        '<div style="display: flex; gap: 8px;">' +
+                        '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng) + '" target="_blank" rel="noopener" style="background: ' + primaryColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Directions</a>' +
+                        (location.booking_url ? '<a href="' + encodeURI(String(location.booking_url)) + '" target="_blank" rel="noopener" style="background: ' + accentColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Book</a>' : '') +
+                        '</div></div>';
+                    
+                    var infoWindow = new google.maps.InfoWindow({ content: infoContent });
+                    
+                    marker.addListener('click', function() {
+                        markers.forEach(function(m) { m.infoWindow.close(); });
+                        infoWindow.open(map, marker);
+                    });
+                    
+                    marker.infoWindow = infoWindow;
+                    markers.push(marker);
+                    bounds.extend(position);
+                });
+                
+                if (markers.length > 1) {
+                    map.fitBounds(bounds);
+                } else if (markers.length === 1) {
+                    map.setCenter(markers[0].getPosition());
+                    map.setZoom(14);
+                }
+                
+                // Click on location cards to focus marker
+                document.querySelectorAll('#' + containerId + ' .esl-location-card').forEach(function(card, index) {
+                    card.addEventListener('click', function() {
+                        if (markers[index]) {
+                            map.setCenter(markers[index].getPosition());
+                            map.setZoom(15);
+                            google.maps.event.trigger(markers[index], 'click');
+                        }
+                    });
+                });
+            }
+            
+            // Load Google Maps
+            var callbackName = 'enamelInitMap_' + containerId.replace(/-/g, '_');
+            if (typeof google !== 'undefined' && google.maps) {
+                initMap();
+            } else {
+                var script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&callback=' + callbackName;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+                window[callbackName] = initMap;
+            }
+        })();
+        </script>
+        <?php endif; ?>
+        
+        <?php
+        return ob_get_clean();
+    }
+    
+    /**
+     * Get all active locations with sanitized data
+     */
+    private function get_all_locations() {
+        $posts = get_posts(array(
+            'post_type' => 'clinic_location',
+            'posts_per_page' => -1,
+            'post_status' => 'publish'
+        ));
+        
+        $locations = array();
+        foreach ($posts as $post) {
+            $active = get_post_meta($post->ID, '_enamel_sl_active', true);
+            if ($active === '0') continue; // Skip inactive
+            
+            // Validate and sanitize coordinates
+            $lat = floatval(get_post_meta($post->ID, '_enamel_sl_lat', true));
+            $lng = floatval(get_post_meta($post->ID, '_enamel_sl_lng', true));
+            if (!is_finite($lat) || $lat < -90 || $lat > 90) $lat = 0;
+            if (!is_finite($lng) || $lng < -180 || $lng > 180) $lng = 0;
+            
+            // Validate rating
+            $rating = floatval(get_post_meta($post->ID, '_enamel_sl_rating', true));
+            if (!is_finite($rating) || $rating < 0 || $rating > 5) $rating = 0;
+            
+            // Sanitize all data for safe output with length limits
+            $locations[] = array(
+                'id' => intval($post->ID),
+                'name' => mb_substr(sanitize_text_field($post->post_title), 0, 200),
+                'address' => mb_substr(sanitize_text_field(get_post_meta($post->ID, '_enamel_sl_address', true)), 0, 300),
+                'city' => mb_substr(sanitize_text_field(get_post_meta($post->ID, '_enamel_sl_city', true)), 0, 100),
+                'state' => mb_substr(sanitize_text_field(get_post_meta($post->ID, '_enamel_sl_state', true)), 0, 50),
+                'zip' => mb_substr(sanitize_text_field(get_post_meta($post->ID, '_enamel_sl_zip', true)), 0, 20),
+                'phone' => mb_substr(sanitize_text_field(get_post_meta($post->ID, '_enamel_sl_phone', true)), 0, 30),
+                'lat' => $lat,
+                'lng' => $lng,
+                'hours' => mb_substr(sanitize_textarea_field(get_post_meta($post->ID, '_enamel_sl_hours', true)), 0, 1000),
+                'booking_url' => esc_url_raw(mb_substr(get_post_meta($post->ID, '_enamel_sl_booking_url', true), 0, 500)),
+                'gmb_url' => esc_url_raw(mb_substr(get_post_meta($post->ID, '_enamel_sl_gmb_url', true), 0, 500)),
+                'rating' => $rating,
+            );
+        }
+        
+        return $locations;
+    }
+    
+    /**
+     * Get frontend settings
+     */
+    private function get_frontend_settings() {
+        return array(
+            'header_main_title' => get_option('enamel_sl_header_main_title', 'Find Your Nearest Location'),
+            'header_subtitle' => get_option('enamel_sl_header_subtitle', 'Quality dental care across Texas with convenient locations'),
+            'search_input_placeholder' => get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code'),
+            'schedule_button_text' => get_option('enamel_sl_schedule_button_text', 'Schedule Online'),
+            'directions_button_text' => get_option('enamel_sl_directions_button_text', 'Get Directions'),
+            'call_button_text' => get_option('enamel_sl_call_button_text', 'Call Now'),
+            'primary_color' => get_option('enamel_sl_primary_color', '#7D55C7'),
+            'secondary_color' => get_option('enamel_sl_secondary_color', '#5a3d96'),
+            'accent_color' => get_option('enamel_sl_accent_color', '#E56B10'),
+            'background_color' => get_option('enamel_sl_background_color', '#FFFFFF'),
+            'card_background' => get_option('enamel_sl_card_background', '#F8F9FA'),
+            'header_background' => get_option('enamel_sl_header_background', '#7D55C7'),
+            'text_primary' => get_option('enamel_sl_text_primary', '#231942'),
+            'text_secondary' => get_option('enamel_sl_text_secondary', '#6B7280'),
+            'button_text_color' => get_option('enamel_sl_button_text_color', '#FFFFFF'),
+            'primary_font' => get_option('enamel_sl_primary_font', 'Montserrat'),
+            'secondary_font' => get_option('enamel_sl_secondary_font', 'Rubik'),
+            'font_size_base' => get_option('enamel_sl_font_size_base', '16'),
         );
     }
     
@@ -357,10 +1281,13 @@ class EnamelStoreLocator {
      * Enqueue frontend scripts
      */
     public function enqueue_frontend_scripts() {
-        // Only enqueue if shortcode is present
         global $post;
         if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'enamel_store_locator')) {
-            // Scripts would be enqueued here
+            // Load Google Fonts
+            $primary_font = get_option('enamel_sl_primary_font', 'Montserrat');
+            $secondary_font = get_option('enamel_sl_secondary_font', 'Rubik');
+            $fonts = urlencode($primary_font . ':400,500,600,700|' . $secondary_font . ':400,500');
+            wp_enqueue_style('enamel-sl-google-fonts', 'https://fonts.googleapis.com/css2?family=' . $fonts . '&display=swap');
         }
     }
     
@@ -368,10 +1295,76 @@ class EnamelStoreLocator {
      * Enqueue admin scripts
      */
     public function admin_enqueue_scripts($hook) {
-        // Only enqueue on our admin pages
-        if (strpos($hook, 'enamel-store-locator') !== false || strpos($hook, 'clinic_location') !== false) {
+        global $post_type;
+        
+        // On our admin pages or location edit screen
+        if (strpos($hook, 'enamel-store-locator') !== false || $post_type === 'clinic_location') {
             wp_enqueue_script('wp-color-picker');
             wp_enqueue_style('wp-color-picker');
+            
+            // Add inline script for location meta box
+            wp_add_inline_script('jquery', '
+                jQuery(document).ready(function($) {
+                    // Color pickers
+                    $(".enamel-color-picker").wpColorPicker();
+                    
+                    // Fetch place details
+                    $("#enamel_sl_fetch_place").on("click", function() {
+                        var placeId = $("#enamel_sl_place_id").val();
+                        var $status = $("#enamel_sl_fetch_status");
+                        var $btn = $(this);
+                        
+                        if (!placeId) {
+                            $status.html("<span style=\"color: red;\">Please enter a Place ID</span>");
+                            return;
+                        }
+                        
+                        $btn.prop("disabled", true);
+                        $status.html("<span>Fetching...</span>");
+                        
+                        $.ajax({
+                            url: ajaxurl,
+                            type: "POST",
+                            data: {
+                                action: "enamel_fetch_place_details",
+                                place_id: placeId,
+                                nonce: "' . wp_create_nonce('enamel_sl_admin_nonce') . '"
+                            },
+                            success: function(response) {
+                                $btn.prop("disabled", false);
+                                if (response.success) {
+                                    var data = response.data;
+                                    
+                                    // Update title if empty
+                                    if (!$("#title").val() && data.name) {
+                                        $("#title").val(data.name);
+                                    }
+                                    
+                                    // Fill in fields
+                                    if (data.address) $("#enamel_sl_address").val(data.address);
+                                    if (data.city) $("#enamel_sl_city").val(data.city);
+                                    if (data.state) $("#enamel_sl_state").val(data.state);
+                                    if (data.zip) $("#enamel_sl_zip").val(data.zip);
+                                    if (data.phone) $("#enamel_sl_phone").val(data.phone);
+                                    if (data.lat) $("#enamel_sl_lat").val(data.lat);
+                                    if (data.lng) $("#enamel_sl_lng").val(data.lng);
+                                    if (data.hours) $("#enamel_sl_hours").val(data.hours);
+                                    if (data.rating) $("#enamel_sl_rating").val(data.rating);
+                                    if (data.gmb_url) $("#enamel_sl_gmb_url").val(data.gmb_url);
+                                    
+                                    $status.html("<span style=\"color: green;\">✓ Details fetched successfully!</span>");
+                                } else {
+                                    $status.html("<span style=\"color: red;\">" + response.data + "</span>");
+                                }
+                            },
+                            error: function() {
+                                $btn.prop("disabled", false);
+                                $status.html("<span style=\"color: red;\">Request failed. Please try again.</span>");
+                            }
+                        });
+                    });
+                });
+            ');
         }
     }
     
@@ -407,5 +1400,3 @@ class EnamelStoreLocator {
 add_action('plugins_loaded', function() {
     EnamelStoreLocator::get_instance();
 });
-
-?>
