@@ -227,6 +227,8 @@ class EnamelStoreLocator {
             'text_primary' => 'sanitize_hex_color',
             'text_secondary' => 'sanitize_hex_color',
             'button_text_color' => 'sanitize_hex_color',
+            'header_text_color' => 'sanitize_hex_color',
+            'card_text_color' => 'sanitize_hex_color',
             // Fonts
             'primary_font' => 'sanitize_text_field',
             'secondary_font' => 'sanitize_text_field',
@@ -911,6 +913,20 @@ class EnamelStoreLocator {
                             <input type="text" id="enamel_sl_button_text_color" name="enamel_sl_button_text_color" value="<?php echo esc_attr(get_option('enamel_sl_button_text_color', '#FFFFFF')); ?>" class="enamel-color-picker" />
                         </td>
                     </tr>
+                    <tr>
+                        <th><label for="enamel_sl_header_text_color"><?php _e('Header Text Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_header_text_color" name="enamel_sl_header_text_color" value="<?php echo esc_attr(get_option('enamel_sl_header_text_color', '#FFFFFF')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Text color for the header title and subtitle', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_card_text_color"><?php _e('Card Text Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_card_text_color" name="enamel_sl_card_text_color" value="<?php echo esc_attr(get_option('enamel_sl_card_text_color', '#231942')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Text color for location cards', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
                 </table>
                 
                 <?php submit_button(); ?>
@@ -965,12 +981,11 @@ class EnamelStoreLocator {
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-header {
                     background: linear-gradient(135deg, <?php echo esc_attr($settings['header_background']); ?> 0%, <?php echo esc_attr($settings['primary_color']); ?> 100%);
-                    color: #fff;
-                    padding: 48px 32px 80px 32px;
+                    color: <?php echo esc_attr($settings['header_text_color']); ?>;
+                    padding: 48px 32px 32px 32px;
                     text-align: center;
-                    border-radius: 16px 16px 24px 24px;
+                    border-radius: 0;
                     position: relative;
-                    margin-bottom: -40px;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-header-title {
                     margin: 0 0 8px 0;
@@ -1012,6 +1027,7 @@ class EnamelStoreLocator {
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-location-card {
                     background: <?php echo esc_attr($settings['card_background']); ?>;
+                    color: <?php echo esc_attr($settings['card_text_color']); ?>;
                     border-radius: 12px;
                     padding: 20px;
                     border: 1px solid #e5e7eb;
@@ -1135,7 +1151,7 @@ class EnamelStoreLocator {
                     font-size: 1.1em;
                     font-weight: 700;
                     margin: 0 0 16px 0;
-                    color: <?php echo esc_attr($settings['text_color']); ?>;
+                    color: <?php echo esc_attr($settings['card_text_color']); ?>;
                     letter-spacing: -0.01em;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-search-input {
@@ -1147,7 +1163,7 @@ class EnamelStoreLocator {
                     font-size: 0.95em;
                     box-sizing: border-box;
                     background: <?php echo esc_attr($settings['background_color']); ?>;
-                    color: <?php echo esc_attr($settings['text_color']); ?>;
+                    color: <?php echo esc_attr($settings['card_text_color']); ?>;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-search-input:focus {
                     outline: none;
@@ -1690,10 +1706,15 @@ class EnamelStoreLocator {
             'text_primary' => get_option('enamel_sl_text_primary', '#231942'),
             'text_secondary' => get_option('enamel_sl_text_secondary', '#6B7280'),
             'button_text_color' => get_option('enamel_sl_button_text_color', '#FFFFFF'),
+            'header_text_color' => get_option('enamel_sl_header_text_color', '#FFFFFF'),
+            'card_text_color' => get_option('enamel_sl_card_text_color', '#231942'),
             // Fonts
             'primary_font' => get_option('enamel_sl_primary_font', 'Montserrat'),
             'secondary_font' => get_option('enamel_sl_secondary_font', 'Rubik'),
             'font_size_base' => get_option('enamel_sl_font_size_base', '16'),
+            // Legacy aliases
+            'card_bg' => get_option('enamel_sl_card_background', '#F8F9FA'),
+            'border_color' => '#E5E7EB',
         );
     }
     
