@@ -503,21 +503,28 @@ class EnamelStoreLocator {
      * Enqueue React app assets
      */
     private function enqueue_react_app() {
-        // This will be updated to load the built React files
-        wp_enqueue_script(
-            'enamel-store-locator-app',
-            ENAMEL_SL_PLUGIN_URL . 'build/static/js/main.js',
-            array('wp-element'),
-            ENAMEL_SL_VERSION,
-            true
-        );
+        // Check if build files exist before enqueueing
+        $js_file = ENAMEL_SL_PLUGIN_PATH . 'build/static/js/main.js';
+        $css_file = ENAMEL_SL_PLUGIN_PATH . 'build/static/css/main.css';
         
-        wp_enqueue_style(
-            'enamel-store-locator-styles',
-            ENAMEL_SL_PLUGIN_URL . 'build/static/css/main.css',
-            array(),
-            ENAMEL_SL_VERSION
-        );
+        if (file_exists($js_file)) {
+            wp_enqueue_script(
+                'enamel-store-locator-app',
+                ENAMEL_SL_PLUGIN_URL . 'build/static/js/main.js',
+                array('wp-element'),
+                ENAMEL_SL_VERSION,
+                true
+            );
+        }
+        
+        if (file_exists($css_file)) {
+            wp_enqueue_style(
+                'enamel-store-locator-styles',
+                ENAMEL_SL_PLUGIN_URL . 'build/static/css/main.css',
+                array(),
+                ENAMEL_SL_VERSION
+            );
+        }
     }
     
     /**
