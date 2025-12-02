@@ -1056,6 +1056,122 @@ class EnamelStoreLocator {
                     text-align: center;
                     color: <?php echo esc_attr($settings['text_secondary']); ?>;
                 }
+                #<?php echo esc_attr($container_id); ?> .esl-search-box {
+                    padding: 16px;
+                    background: <?php echo esc_attr($settings['card_bg']); ?>;
+                    border-radius: 8px;
+                    margin-bottom: 16px;
+                    border: 1px solid <?php echo esc_attr($settings['border_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-title {
+                    font-size: 0.9em;
+                    font-weight: 600;
+                    margin: 0 0 12px 0;
+                    color: <?php echo esc_attr($settings['text_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-input {
+                    width: 100%;
+                    padding: 10px 12px 10px 36px;
+                    border: 1px solid <?php echo esc_attr($settings['border_color']); ?>;
+                    border-radius: 6px;
+                    font-size: 0.9em;
+                    box-sizing: border-box;
+                    background: <?php echo esc_attr($settings['background_color']); ?>;
+                    color: <?php echo esc_attr($settings['text_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-input:focus {
+                    outline: none;
+                    border-color: <?php echo esc_attr($settings['primary_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-input-wrapper {
+                    position: relative;
+                    margin-bottom: 12px;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-icon {
+                    position: absolute;
+                    left: 12px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 16px;
+                    height: 16px;
+                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-btn {
+                    width: 100%;
+                    padding: 10px 16px;
+                    background: <?php echo esc_attr($settings['primary_color']); ?>;
+                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 0.9em;
+                    font-weight: 500;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    transition: opacity 0.2s;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-btn:hover {
+                    opacity: 0.9;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-btn:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-divider {
+                    display: flex;
+                    align-items: center;
+                    margin: 12px 0;
+                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
+                    font-size: 0.75em;
+                    text-transform: uppercase;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-divider::before,
+                #<?php echo esc_attr($container_id); ?> .esl-search-divider::after {
+                    content: '';
+                    flex: 1;
+                    height: 1px;
+                    background: <?php echo esc_attr($settings['border_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-search-divider span {
+                    padding: 0 10px;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-btn {
+                    width: 100%;
+                    padding: 10px 16px;
+                    background: transparent;
+                    color: <?php echo esc_attr($settings['primary_color']); ?>;
+                    border: 1px solid <?php echo esc_attr($settings['primary_color']); ?>;
+                    border-radius: 6px;
+                    font-size: 0.9em;
+                    font-weight: 500;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    transition: background 0.2s, color 0.2s;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-btn:hover {
+                    background: <?php echo esc_attr($settings['primary_color']); ?>;
+                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-btn:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-spinner {
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid currentColor;
+                    border-top-color: transparent;
+                    border-radius: 50%;
+                    animation: esl-spin 0.8s linear infinite;
+                }
+                @keyframes esl-spin {
+                    to { transform: rotate(360deg); }
+                }
                 @media (max-width: 768px) {
                     #<?php echo esc_attr($container_id); ?> .esl-content {
                         flex-direction: column;
@@ -1074,6 +1190,39 @@ class EnamelStoreLocator {
             
             <div class="esl-content">
                 <div class="esl-sidebar">
+                    <!-- Search Box -->
+                    <div class="esl-search-box">
+                        <h3 class="esl-search-title"><?php _e('Find Nearest Location', 'enamel-store-locator'); ?></h3>
+                        <div class="esl-search-input-wrapper">
+                            <svg class="esl-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.3-4.3"></path>
+                            </svg>
+                            <input type="text" class="esl-search-input" id="<?php echo esc_attr($container_id); ?>-search" placeholder="<?php echo esc_attr($settings['search_input_placeholder']); ?>" />
+                        </div>
+                        <button type="button" class="esl-search-btn" id="<?php echo esc_attr($container_id); ?>-search-btn">
+                            <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.3-4.3"></path>
+                            </svg>
+                            <?php _e('Search', 'enamel-store-locator'); ?>
+                        </button>
+                        <div class="esl-search-divider"><span><?php _e('or', 'enamel-store-locator'); ?></span></div>
+                        <button type="button" class="esl-location-btn" id="<?php echo esc_attr($container_id); ?>-location-btn">
+                            <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <line x1="12" y1="2" x2="12" y2="6"></line>
+                                <line x1="12" y1="18" x2="12" y2="22"></line>
+                                <line x1="2" y1="12" x2="6" y2="12"></line>
+                                <line x1="18" y1="12" x2="22" y2="12"></line>
+                            </svg>
+                            <span class="esl-location-btn-text"><?php _e('Use My Location', 'enamel-store-locator'); ?></span>
+                        </button>
+                    </div>
+                    
+                    <!-- Location Cards -->
+                    <div class="esl-locations-list" id="<?php echo esc_attr($container_id); ?>-locations">
                     <?php if (empty($locations)): ?>
                         <div class="esl-no-locations">
                             <p><?php _e('No locations found. Add locations in the WordPress admin.', 'enamel-store-locator'); ?></p>
@@ -1109,6 +1258,7 @@ class EnamelStoreLocator {
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
+                    </div>
                 </div>
                 
                 <div class="esl-map" id="<?php echo esc_attr($container_id); ?>-map">
@@ -1245,7 +1395,106 @@ class EnamelStoreLocator {
                         }
                     });
                 });
+                
+                // Store map and markers for search functionality
+                window['eslMap_' + containerId] = { map: map, markers: markers };
             }
+            
+            // Calculate distance between two coordinates (in miles)
+            function calculateDistance(lat1, lng1, lat2, lng2) {
+                var R = 3959; // Earth's radius in miles
+                var dLat = (lat2 - lat1) * Math.PI / 180;
+                var dLng = (lng2 - lng1) * Math.PI / 180;
+                var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLng/2) * Math.sin(dLng/2);
+                var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            }
+            
+            // Sort and display locations by distance
+            function sortLocationsByDistance(userLat, userLng) {
+                var mapData = window['eslMap_' + containerId];
+                if (!mapData) return;
+                
+                var locationsWithDistance = locations.map(function(loc, index) {
+                    return {
+                        location: loc,
+                        index: index,
+                        distance: calculateDistance(userLat, userLng, parseFloat(loc.lat), parseFloat(loc.lng))
+                    };
+                }).sort(function(a, b) { return a.distance - b.distance; });
+                
+                // Highlight nearest and center map on it
+                if (locationsWithDistance.length > 0 && mapData.markers.length > 0) {
+                    var nearest = locationsWithDistance[0];
+                    mapData.map.setCenter({ lat: parseFloat(nearest.location.lat), lng: parseFloat(nearest.location.lng) });
+                    mapData.map.setZoom(13);
+                    
+                    // Open info window for nearest location
+                    if (mapData.markers[nearest.index]) {
+                        google.maps.event.trigger(mapData.markers[nearest.index], 'click');
+                    }
+                }
+            }
+            
+            // Search button handler
+            document.getElementById(containerId + '-search-btn').addEventListener('click', function() {
+                var searchInput = document.getElementById(containerId + '-search');
+                var query = searchInput.value.trim();
+                if (!query) return;
+                
+                var geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: query }, function(results, status) {
+                    if (status === 'OK' && results[0]) {
+                        var location = results[0].geometry.location;
+                        sortLocationsByDistance(location.lat(), location.lng());
+                    } else {
+                        alert('Location not found. Please try a different address.');
+                    }
+                });
+            });
+            
+            // Enter key handler for search
+            document.getElementById(containerId + '-search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById(containerId + '-search-btn').click();
+                }
+            });
+            
+            // Use My Location button handler
+            document.getElementById(containerId + '-location-btn').addEventListener('click', function() {
+                var btn = this;
+                var textSpan = btn.querySelector('.esl-location-btn-text');
+                var originalText = textSpan.textContent;
+                
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser.');
+                    return;
+                }
+                
+                // Show loading state
+                btn.disabled = true;
+                textSpan.textContent = 'Getting location...';
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        sortLocationsByDistance(position.coords.latitude, position.coords.longitude);
+                        btn.disabled = false;
+                        textSpan.textContent = originalText;
+                    },
+                    function(error) {
+                        btn.disabled = false;
+                        textSpan.textContent = originalText;
+                        var message = 'Unable to get your location.';
+                        if (error.code === 1) message = 'Location access denied. Please enable location permissions.';
+                        else if (error.code === 2) message = 'Location unavailable. Please try again.';
+                        else if (error.code === 3) message = 'Location request timed out. Please try again.';
+                        alert(message);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            });
             
             // Load Google Maps
             var callbackName = 'enamelInitMap_' + containerId.replace(/-/g, '_');
