@@ -976,11 +976,12 @@ class EnamelStoreLocator {
                     min-height: 400px;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-sidebar {
-                    width: 350px;
-                    max-height: 500px;
+                    width: 380px;
+                    max-height: 550px;
                     overflow-y: auto;
-                    padding: 15px;
-                    background: #f9f9f9;
+                    padding: 16px;
+                    background: <?php echo esc_attr($settings['background_color']); ?>;
+                    border-right: 1px solid #e5e7eb;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-map {
                     flex: 1;
@@ -988,24 +989,59 @@ class EnamelStoreLocator {
                     min-height: 400px;
                     background: #e5e5e5;
                 }
+                #<?php echo esc_attr($container_id); ?> .esl-locations-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
                 #<?php echo esc_attr($container_id); ?> .esl-location-card {
                     background: <?php echo esc_attr($settings['card_background']); ?>;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin-bottom: 10px;
-                    border: 1px solid #e0e0e0;
+                    border-radius: 12px;
+                    padding: 20px;
+                    border: 1px solid #e5e7eb;
                     cursor: pointer;
-                    transition: box-shadow 0.2s, transform 0.2s;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-location-card:hover {
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    transform: translateY(-2px);
+                    box-shadow: 0 10px 25px -8px rgba(0,0,0,0.18), 0 4px 10px -4px rgba(0,0,0,0.1);
+                    transform: translateY(-3px);
+                    border-color: <?php echo esc_attr($settings['primary_color']); ?>50;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-card.active {
+                    border-color: <?php echo esc_attr($settings['primary_color']); ?>;
+                    box-shadow: 0 0 0 3px <?php echo esc_attr($settings['primary_color']); ?>25, 0 4px 6px -1px rgba(0,0,0,0.08);
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-location-name {
-                    font-weight: 600;
-                    font-size: 1.1em;
-                    margin-bottom: 8px;
-                    color: <?php echo esc_attr($settings['text_primary']); ?>;
+                    font-family: <?php echo esc_attr($settings['primary_font']); ?>, sans-serif;
+                    font-weight: 700;
+                    font-size: 1.2em;
+                    margin-bottom: 14px;
+                    color: <?php echo esc_attr($settings['primary_color']); ?>;
+                    line-height: 1.3;
+                    letter-spacing: -0.01em;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-location-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-bottom: 16px;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-info-row {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 10px;
+                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
+                    font-size: 0.9em;
+                    line-height: 1.5;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-info-icon {
+                    flex-shrink: 0;
+                    width: 18px;
+                    height: 18px;
+                    margin-top: 2px;
+                    color: <?php echo esc_attr($settings['primary_color']); ?>;
+                    opacity: 0.7;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-location-address {
                     color: <?php echo esc_attr($settings['text_secondary']); ?>;
@@ -1019,37 +1055,50 @@ class EnamelStoreLocator {
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-buttons {
                     display: flex;
-                    gap: 8px;
+                    gap: 10px;
                     flex-wrap: wrap;
+                    padding-top: 12px;
+                    border-top: 1px solid #f0f0f0;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-btn {
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    font-size: 0.85em;
-                    font-weight: 500;
+                    padding: 10px 18px;
+                    border-radius: 8px;
+                    font-size: 0.875em;
+                    font-weight: 600;
                     text-decoration: none;
                     display: inline-flex;
                     align-items: center;
                     gap: 6px;
                     cursor: pointer;
                     border: none;
-                    transition: opacity 0.2s;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-btn:hover {
-                    opacity: 0.9;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-btn-primary {
                     background: <?php echo esc_attr($settings['primary_color']); ?>;
                     color: <?php echo esc_attr($settings['button_text_color']); ?>;
                 }
+                #<?php echo esc_attr($container_id); ?> .esl-btn-primary:hover {
+                    filter: brightness(1.05);
+                }
                 #<?php echo esc_attr($container_id); ?> .esl-btn-accent {
                     background: <?php echo esc_attr($settings['accent_color']); ?>;
                     color: <?php echo esc_attr($settings['button_text_color']); ?>;
                 }
+                #<?php echo esc_attr($container_id); ?> .esl-btn-accent:hover {
+                    filter: brightness(1.05);
+                }
                 #<?php echo esc_attr($container_id); ?> .esl-btn-outline {
                     background: transparent;
-                    border: 1px solid <?php echo esc_attr($settings['primary_color']); ?>;
+                    border: 2px solid <?php echo esc_attr($settings['primary_color']); ?>;
                     color: <?php echo esc_attr($settings['primary_color']); ?>;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-btn-outline:hover {
+                    background: <?php echo esc_attr($settings['primary_color']); ?>10;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-no-locations {
                     padding: 40px;
@@ -1231,19 +1280,27 @@ class EnamelStoreLocator {
                         <?php foreach ($locations as $location): ?>
                             <div class="esl-location-card" data-lat="<?php echo esc_attr($location['lat']); ?>" data-lng="<?php echo esc_attr($location['lng']); ?>">
                                 <div class="esl-location-name"><?php echo esc_html($location['name']); ?></div>
-                                <div class="esl-location-address">
-                                    <?php echo esc_html($location['address']); ?><br>
-                                    <?php echo esc_html($location['city'] . ', ' . $location['state'] . ' ' . $location['zip']); ?>
-                                </div>
-                                <?php if ($location['phone']): ?>
-                                    <div class="esl-location-phone"><?php echo esc_html($location['phone']); ?></div>
-                                <?php endif; ?>
-                                <div class="esl-buttons">
-                                    <?php if ($settings['enable_directions_button']): ?>
-                                        <a href="https://www.google.com/maps/dir/?api=1&destination=<?php echo esc_attr($location['lat']); ?>,<?php echo esc_attr($location['lng']); ?>" target="_blank" class="esl-btn esl-btn-primary">
-                                            <?php echo esc_html($settings['directions_button_text']); ?>
-                                        </a>
+                                <div class="esl-location-info">
+                                    <div class="esl-info-row">
+                                        <svg class="esl-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                            <circle cx="12" cy="10" r="3"></circle>
+                                        </svg>
+                                        <span>
+                                            <?php echo esc_html($location['address']); ?><br>
+                                            <?php echo esc_html($location['city'] . ', ' . $location['state'] . ' ' . $location['zip']); ?>
+                                        </span>
+                                    </div>
+                                    <?php if ($location['phone']): ?>
+                                    <div class="esl-info-row">
+                                        <svg class="esl-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                        </svg>
+                                        <span><?php echo esc_html($location['phone']); ?></span>
+                                    </div>
                                     <?php endif; ?>
+                                </div>
+                                <div class="esl-buttons">
                                     <?php if ($settings['enable_schedule_button'] && $location['booking_url']): ?>
                                         <a href="<?php echo esc_url($location['booking_url']); ?>" target="_blank" class="esl-btn esl-btn-accent">
                                             <?php echo esc_html($settings['schedule_button_text']); ?>
@@ -1252,6 +1309,14 @@ class EnamelStoreLocator {
                                     <?php if ($settings['enable_call_button'] && $location['phone']): ?>
                                         <a href="tel:<?php echo esc_attr(preg_replace('/[^0-9]/', '', $location['phone'])); ?>" class="esl-btn esl-btn-outline">
                                             <?php echo esc_html($settings['call_button_text']); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ($settings['enable_directions_button']): ?>
+                                        <a href="https://www.google.com/maps/dir/?api=1&destination=<?php echo esc_attr($location['lat']); ?>,<?php echo esc_attr($location['lng']); ?>" target="_blank" class="esl-btn esl-btn-primary" style="margin-left: auto;">
+                                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                                            </svg>
+                                            <?php echo esc_html($settings['directions_button_text']); ?>
                                         </a>
                                     <?php endif; ?>
                                 </div>
@@ -1385,9 +1450,15 @@ class EnamelStoreLocator {
                     map.setZoom(14);
                 }
                 
-                // Click on location cards to focus marker
-                document.querySelectorAll('#' + containerId + ' .esl-location-card').forEach(function(card, index) {
+                // Click on location cards to focus marker and highlight card
+                var allCards = document.querySelectorAll('#' + containerId + ' .esl-location-card');
+                allCards.forEach(function(card, index) {
                     card.addEventListener('click', function() {
+                        // Remove active class from all cards
+                        allCards.forEach(function(c) { c.classList.remove('active'); });
+                        // Add active class to clicked card
+                        card.classList.add('active');
+                        
                         if (markers[index]) {
                             map.setCenter(markers[index].getPosition());
                             map.setZoom(15);
@@ -1430,6 +1501,14 @@ class EnamelStoreLocator {
                     var nearest = locationsWithDistance[0];
                     mapData.map.setCenter({ lat: parseFloat(nearest.location.lat), lng: parseFloat(nearest.location.lng) });
                     mapData.map.setZoom(13);
+                    
+                    // Highlight the nearest card
+                    var allCards = document.querySelectorAll('#' + containerId + ' .esl-location-card');
+                    allCards.forEach(function(c) { c.classList.remove('active'); });
+                    if (allCards[nearest.index]) {
+                        allCards[nearest.index].classList.add('active');
+                        allCards[nearest.index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
                     
                     // Open info window for nearest location
                     if (mapData.markers[nearest.index]) {
