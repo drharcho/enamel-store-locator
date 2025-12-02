@@ -1087,15 +1087,17 @@ class EnamelStoreLocator {
                                     <div class="esl-location-phone"><?php echo esc_html($location['phone']); ?></div>
                                 <?php endif; ?>
                                 <div class="esl-buttons">
-                                    <a href="https://www.google.com/maps/dir/?api=1&destination=<?php echo esc_attr($location['lat']); ?>,<?php echo esc_attr($location['lng']); ?>" target="_blank" class="esl-btn esl-btn-primary">
-                                        <?php echo esc_html($settings['directions_button_text']); ?>
-                                    </a>
-                                    <?php if ($location['booking_url']): ?>
+                                    <?php if ($settings['enable_directions_button']): ?>
+                                        <a href="https://www.google.com/maps/dir/?api=1&destination=<?php echo esc_attr($location['lat']); ?>,<?php echo esc_attr($location['lng']); ?>" target="_blank" class="esl-btn esl-btn-primary">
+                                            <?php echo esc_html($settings['directions_button_text']); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ($settings['enable_schedule_button'] && $location['booking_url']): ?>
                                         <a href="<?php echo esc_url($location['booking_url']); ?>" target="_blank" class="esl-btn esl-btn-accent">
                                             <?php echo esc_html($settings['schedule_button_text']); ?>
                                         </a>
                                     <?php endif; ?>
-                                    <?php if ($location['phone']): ?>
+                                    <?php if ($settings['enable_call_button'] && $location['phone']): ?>
                                         <a href="tel:<?php echo esc_attr(preg_replace('/[^0-9]/', '', $location['phone'])); ?>" class="esl-btn esl-btn-outline">
                                             <?php echo esc_html($settings['call_button_text']); ?>
                                         </a>
@@ -1131,6 +1133,10 @@ class EnamelStoreLocator {
             $safe_primary_color = esc_js(sanitize_hex_color($settings['primary_color']));
             $safe_accent_color = esc_js(sanitize_hex_color($settings['accent_color']));
             $safe_api_key = esc_js(sanitize_text_field($api_key));
+            // Button visibility flags
+            $show_directions = !empty($settings['enable_directions_button']);
+            $show_schedule = !empty($settings['enable_schedule_button']);
+            $show_call = !empty($settings['enable_call_button']);
         ?>
         <script>
         (function() {
@@ -1141,6 +1147,9 @@ class EnamelStoreLocator {
             var defaultZoom = <?php echo intval($atts['zoom']); ?>;
             var primaryColor = '<?php echo $safe_primary_color; ?>';
             var accentColor = '<?php echo $safe_accent_color; ?>';
+            var showDirections = <?php echo $show_directions ? 'true' : 'false'; ?>;
+            var showSchedule = <?php echo $show_schedule ? 'true' : 'false'; ?>;
+            var showCall = <?php echo $show_call ? 'true' : 'false'; ?>;
             
             // Helper function to escape HTML for info windows
             function escapeHtml(text) {
@@ -1188,15 +1197,21 @@ class EnamelStoreLocator {
                         title: safeName
                     });
                     
-                    // Build info window with pre-escaped content
+                    // Build info window with pre-escaped content and visibility checks
+                    var buttonsHtml = '';
+                    if (showDirections) {
+                        buttonsHtml += '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng) + '" target="_blank" rel="noopener" style="background: ' + primaryColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Directions</a>';
+                    }
+                    if (showSchedule && location.booking_url) {
+                        buttonsHtml += '<a href="' + encodeURI(String(location.booking_url)) + '" target="_blank" rel="noopener" style="background: ' + accentColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Book</a>';
+                    }
+                    
                     var infoContent = '<div style="padding: 10px; max-width: 250px;">' +
                         '<h3 style="margin: 0 0 8px 0; font-size: 16px;">' + safeName + '</h3>' +
                         '<p style="margin: 0 0 8px 0; font-size: 13px; color: #666;">' + safeAddress + '<br>' + safeCity + ', ' + safeState + ' ' + safeZip + '</p>' +
                         (safePhone ? '<p style="margin: 0 0 10px 0; font-size: 13px;">' + safePhone + '</p>' : '') +
-                        '<div style="display: flex; gap: 8px;">' +
-                        '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng) + '" target="_blank" rel="noopener" style="background: ' + primaryColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Directions</a>' +
-                        (location.booking_url ? '<a href="' + encodeURI(String(location.booking_url)) + '" target="_blank" rel="noopener" style="background: ' + accentColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Book</a>' : '') +
-                        '</div></div>';
+                        (buttonsHtml ? '<div style="display: flex; gap: 8px;">' + buttonsHtml + '</div>' : '') +
+                        '</div>';
                     
                     var infoWindow = new google.maps.InfoWindow({ content: infoContent });
                     
@@ -1303,9 +1318,15 @@ class EnamelStoreLocator {
             'header_main_title' => get_option('enamel_sl_header_main_title', 'Find Your Nearest Location'),
             'header_subtitle' => get_option('enamel_sl_header_subtitle', 'Quality dental care across Texas with convenient locations'),
             'search_input_placeholder' => get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code'),
+            // Button visibility (default ON for all)
+            'enable_schedule_button' => get_option('enamel_sl_enable_schedule_button', '1'),
+            'enable_directions_button' => get_option('enamel_sl_enable_directions_button', '1'),
+            'enable_call_button' => get_option('enamel_sl_enable_call_button', '1'),
+            // Button text
             'schedule_button_text' => get_option('enamel_sl_schedule_button_text', 'Schedule Online'),
             'directions_button_text' => get_option('enamel_sl_directions_button_text', 'Get Directions'),
             'call_button_text' => get_option('enamel_sl_call_button_text', 'Call Now'),
+            // Colors
             'primary_color' => get_option('enamel_sl_primary_color', '#7D55C7'),
             'secondary_color' => get_option('enamel_sl_secondary_color', '#5a3d96'),
             'accent_color' => get_option('enamel_sl_accent_color', '#E56B10'),
@@ -1315,6 +1336,7 @@ class EnamelStoreLocator {
             'text_primary' => get_option('enamel_sl_text_primary', '#231942'),
             'text_secondary' => get_option('enamel_sl_text_secondary', '#6B7280'),
             'button_text_color' => get_option('enamel_sl_button_text_color', '#FFFFFF'),
+            // Fonts
             'primary_font' => get_option('enamel_sl_primary_font', 'Montserrat'),
             'secondary_font' => get_option('enamel_sl_secondary_font', 'Rubik'),
             'font_size_base' => get_option('enamel_sl_font_size_base', '16'),
