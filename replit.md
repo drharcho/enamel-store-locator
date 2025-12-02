@@ -82,11 +82,18 @@ Preferred communication style: Simple, everyday language.
 - `connect-pg-simple`: PostgreSQL-backed session store for Express
 - Enables persistent user sessions across server restarts
 
-**WordPress Integration** (Planned):
-- Custom plugin structure in `wordpress-plugin/` directory
+**WordPress Plugin** (Production Ready):
+- Single-file plugin architecture in `wordpress-plugin/` directory
 - Shortcode-based embedding (`[enamel_store_locator]`)
-- Admin interface for location management, settings, and customization
-- REST API endpoints for WordPress-to-React communication
+- Custom post type `clinic_location` for location management
+- Admin pages: Dashboard, Settings, Branding
+- Google Places API integration for auto-fetching business details via Place ID
+- Custom meta fields: Place ID, booking URL, address, phone, coordinates, hours, rating
+- Font customization: 15+ Google Fonts selectable for headings and body text
+- Full color palette with WordPress color pickers (primary, accent, background, text, buttons)
+- Security hardened: XSS protection via esc_html(), esc_attr(), esc_url(), wp_json_encode() with HEX flags
+- Data validation: Length limits on all fields, finite number validation for coordinates/rating
+- Installable zip file: `enamel-store-locator.zip` (15KB)
 
 **Development Tools**:
 - `tsx`: TypeScript execution for development server
