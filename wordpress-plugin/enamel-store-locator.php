@@ -744,6 +744,7 @@ class EnamelStoreLocator {
                         <th><label for="enamel_sl_enable_schedule_button"><?php _e('Schedule Button', 'enamel-store-locator'); ?></label></th>
                         <td>
                             <label>
+                                <input type="hidden" name="enamel_sl_enable_schedule_button" value="0" />
                                 <input type="checkbox" id="enamel_sl_enable_schedule_button" name="enamel_sl_enable_schedule_button" value="1" <?php checked(get_option('enamel_sl_enable_schedule_button', '1'), '1'); ?> />
                                 <?php _e('Show "Schedule Online" button', 'enamel-store-locator'); ?>
                             </label>
@@ -756,6 +757,7 @@ class EnamelStoreLocator {
                         <th><label for="enamel_sl_enable_directions_button"><?php _e('Directions Button', 'enamel-store-locator'); ?></label></th>
                         <td>
                             <label>
+                                <input type="hidden" name="enamel_sl_enable_directions_button" value="0" />
                                 <input type="checkbox" id="enamel_sl_enable_directions_button" name="enamel_sl_enable_directions_button" value="1" <?php checked(get_option('enamel_sl_enable_directions_button', '1'), '1'); ?> />
                                 <?php _e('Show "Get Directions" button', 'enamel-store-locator'); ?>
                             </label>
@@ -768,6 +770,7 @@ class EnamelStoreLocator {
                         <th><label for="enamel_sl_enable_call_button"><?php _e('Call Button', 'enamel-store-locator'); ?></label></th>
                         <td>
                             <label>
+                                <input type="hidden" name="enamel_sl_enable_call_button" value="0" />
                                 <input type="checkbox" id="enamel_sl_enable_call_button" name="enamel_sl_enable_call_button" value="1" <?php checked(get_option('enamel_sl_enable_call_button', '1'), '1'); ?> />
                                 <?php _e('Show "Call Now" button', 'enamel-store-locator'); ?>
                             </label>
@@ -1458,7 +1461,7 @@ class EnamelStoreLocator {
     }
     
     public function sanitize_checkbox($value) {
-        return !empty($value) ? 1 : 0;
+        return ($value === '1' || $value === 1) ? '1' : '0';
     }
 }
 
