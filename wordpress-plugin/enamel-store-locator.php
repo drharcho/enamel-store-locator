@@ -196,6 +196,14 @@ class EnamelStoreLocator {
             'default_lat' => array($this, 'sanitize_latitude'),
             'default_lng' => array($this, 'sanitize_longitude'),
             'default_zoom' => array($this, 'sanitize_zoom_level'),
+            // Map styling
+            'map_style' => 'sanitize_text_field',
+            'custom_map_style' => array($this, 'sanitize_json'),
+            // Marker settings
+            'marker_color' => 'sanitize_hex_color',
+            'marker_style' => 'sanitize_text_field',
+            'active_marker_color' => 'sanitize_hex_color',
+            // Text labels
             'header_main_title' => 'sanitize_text_field',
             'header_subtitle' => 'sanitize_textarea_field',
             'search_input_placeholder' => 'sanitize_text_field',
@@ -721,7 +729,85 @@ class EnamelStoreLocator {
                             <p class="description"><?php _e('1 (world) to 20 (building level)', 'enamel-store-locator'); ?></p>
                         </td>
                     </tr>
+                    <tr>
+                        <th><label for="enamel_sl_map_style"><?php _e('Map Style', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <select id="enamel_sl_map_style" name="enamel_sl_map_style" class="regular-text">
+                                <?php
+                                $current_style = get_option('enamel_sl_map_style', 'standard');
+                                $map_styles = array(
+                                    'standard' => 'Standard (Default)',
+                                    'silver' => 'Silver (Modern Gray)',
+                                    'retro' => 'Retro (Muted Vintage)',
+                                    'dark' => 'Dark (Night Mode)',
+                                    'aubergine' => 'Aubergine (Purple Tones)',
+                                    'custom' => 'Custom (Paste JSON Below)',
+                                );
+                                foreach ($map_styles as $value => $label) {
+                                    printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($current_style, $value, false), esc_html($label));
+                                }
+                                ?>
+                            </select>
+                            <p class="description"><?php _e('Choose a preset map style or use custom JSON', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr id="custom_map_style_row" style="<?php echo $current_style === 'custom' ? '' : 'display:none;'; ?>">
+                        <th><label for="enamel_sl_custom_map_style"><?php _e('Custom Map Style JSON', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <textarea id="enamel_sl_custom_map_style" name="enamel_sl_custom_map_style" class="large-text code" rows="8" placeholder='[{"featureType": "all", "stylers": [{"saturation": -80}]}]'><?php echo esc_textarea(get_option('enamel_sl_custom_map_style', '')); ?></textarea>
+                            <p class="description"><?php _e('Paste JSON from', 'enamel-store-locator'); ?> <a href="https://snazzymaps.com/" target="_blank">Snazzy Maps</a> <?php _e('or', 'enamel-store-locator'); ?> <a href="https://mapstyle.withgoogle.com/" target="_blank">Google Maps Styling Wizard</a></p>
+                        </td>
+                    </tr>
                 </table>
+                
+                <h2><?php _e('Map Markers', 'enamel-store-locator'); ?></h2>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="enamel_sl_marker_color"><?php _e('Marker Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_marker_color" name="enamel_sl_marker_color" value="<?php echo esc_attr(get_option('enamel_sl_marker_color', '#7D55C7')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Color for map marker pins', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_marker_style"><?php _e('Marker Style', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <select id="enamel_sl_marker_style" name="enamel_sl_marker_style" class="regular-text">
+                                <?php
+                                $current_marker = get_option('enamel_sl_marker_style', 'pin');
+                                $marker_styles = array(
+                                    'pin' => 'Classic Pin',
+                                    'circle' => 'Circle Dot',
+                                    'tooth' => 'Dental Tooth',
+                                );
+                                foreach ($marker_styles as $value => $label) {
+                                    printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($current_marker, $value, false), esc_html($label));
+                                }
+                                ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_active_marker_color"><?php _e('Active Marker Color', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_active_marker_color" name="enamel_sl_active_marker_color" value="<?php echo esc_attr(get_option('enamel_sl_active_marker_color', '#E56B10')); ?>" class="enamel-color-picker" />
+                            <p class="description"><?php _e('Color when a location is selected', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <script>
+                jQuery(document).ready(function($) {
+                    $('.enamel-color-picker').wpColorPicker();
+                    $('#enamel_sl_map_style').on('change', function() {
+                        if ($(this).val() === 'custom') {
+                            $('#custom_map_style_row').show();
+                        } else {
+                            $('#custom_map_style_row').hide();
+                        }
+                    });
+                });
+                </script>
                 
                 <h2><?php _e('Text & Labels', 'enamel-store-locator'); ?></h2>
                 <table class="form-table">
@@ -1389,6 +1475,11 @@ class EnamelStoreLocator {
             $safe_container_id = esc_js($container_id);
             $safe_primary_color = esc_js(sanitize_hex_color($settings['primary_color']));
             $safe_accent_color = esc_js(sanitize_hex_color($settings['accent_color']));
+            $safe_marker_color = esc_js(sanitize_hex_color($settings['marker_color']));
+            $safe_active_marker_color = esc_js(sanitize_hex_color($settings['active_marker_color']));
+            $safe_marker_style = esc_js(sanitize_text_field($settings['marker_style']));
+            $safe_map_style = esc_js(sanitize_text_field($settings['map_style']));
+            $safe_custom_map_style = esc_js($settings['custom_map_style']);
             $safe_api_key = esc_js(sanitize_text_field($api_key));
             // Button visibility flags
             $show_directions = !empty($settings['enable_directions_button']);
@@ -1404,9 +1495,135 @@ class EnamelStoreLocator {
             var defaultZoom = <?php echo intval($atts['zoom']); ?>;
             var primaryColor = '<?php echo $safe_primary_color; ?>';
             var accentColor = '<?php echo $safe_accent_color; ?>';
+            var markerColor = '<?php echo $safe_marker_color; ?>';
+            var activeMarkerColor = '<?php echo $safe_active_marker_color; ?>';
+            var markerStyle = '<?php echo $safe_marker_style; ?>';
+            var mapStylePreset = '<?php echo $safe_map_style; ?>';
+            var customMapStyle = '<?php echo $safe_custom_map_style; ?>';
             var showDirections = <?php echo $show_directions ? 'true' : 'false'; ?>;
             var showSchedule = <?php echo $show_schedule ? 'true' : 'false'; ?>;
             var showCall = <?php echo $show_call ? 'true' : 'false'; ?>;
+            
+            // Map style presets
+            var mapStylePresets = {
+                standard: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
+                silver: [
+                    { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
+                    { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
+                    { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#bdbdbd" }] },
+                    { featureType: "poi", stylers: [{ visibility: "off" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+                    { featureType: "road.arterial", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dadada" }] },
+                    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+                    { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] },
+                    { featureType: "transit.line", elementType: "geometry", stylers: [{ color: "#e5e5e5" }] },
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9c9c9" }] },
+                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] }
+                ],
+                retro: [
+                    { elementType: "geometry", stylers: [{ color: "#ebe3cd" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#523735" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#f5f1e6" }] },
+                    { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#c9b2a6" }] },
+                    { featureType: "administrative.land_parcel", elementType: "geometry.stroke", stylers: [{ color: "#dcd2be" }] },
+                    { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#ae9e90" }] },
+                    { featureType: "poi", stylers: [{ visibility: "off" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#f5f1e6" }] },
+                    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#fdfcf8" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#f8c967" }] },
+                    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#e9bc62" }] },
+                    { featureType: "road.highway.controlled_access", elementType: "geometry", stylers: [{ color: "#e98d58" }] },
+                    { featureType: "road.highway.controlled_access", elementType: "geometry.stroke", stylers: [{ color: "#db8555" }] },
+                    { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#806b63" }] },
+                    { featureType: "water", elementType: "geometry.fill", stylers: [{ color: "#b9d3c2" }] },
+                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#92998d" }] }
+                ],
+                dark: [
+                    { elementType: "geometry", stylers: [{ color: "#212121" }] },
+                    { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+                    { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#757575" }] },
+                    { featureType: "administrative.country", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] },
+                    { featureType: "poi", stylers: [{ visibility: "off" }] },
+                    { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
+                    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
+                    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#373737" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
+                    { featureType: "road.highway.controlled_access", elementType: "geometry", stylers: [{ color: "#4e4e4e" }] },
+                    { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+                    { featureType: "transit", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
+                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3d3d3d" }] }
+                ],
+                aubergine: [
+                    { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
+                    { featureType: "administrative.country", elementType: "geometry.stroke", stylers: [{ color: "#4b6878" }] },
+                    { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#64779e" }] },
+                    { featureType: "poi", stylers: [{ visibility: "off" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#304a7d" }] },
+                    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#98a5be" }] },
+                    { featureType: "road", elementType: "labels.text.stroke", stylers: [{ color: "#1d2c4d" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2c6675" }] },
+                    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#255763" }] },
+                    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#b0d5ce" }] },
+                    { featureType: "road.highway", elementType: "labels.text.stroke", stylers: [{ color: "#023e58" }] },
+                    { featureType: "transit", elementType: "labels.text.fill", stylers: [{ color: "#98a5be" }] },
+                    { featureType: "transit", elementType: "labels.text.stroke", stylers: [{ color: "#1d2c4d" }] },
+                    { featureType: "water", elementType: "geometry.fill", stylers: [{ color: "#171f29" }] },
+                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4e6d70" }] }
+                ]
+            };
+            
+            // Get map styles based on preset or custom
+            function getMapStyles() {
+                if (mapStylePreset === 'custom' && customMapStyle) {
+                    try { return JSON.parse(customMapStyle); } catch(e) { return mapStylePresets.standard; }
+                }
+                return mapStylePresets[mapStylePreset] || mapStylePresets.standard;
+            }
+            
+            // Create marker icon based on style
+            function createMarkerIcon(color, isActive) {
+                var fillColor = isActive ? activeMarkerColor : color;
+                var scale = isActive ? 1.2 : 1;
+                
+                if (markerStyle === 'circle') {
+                    return {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: fillColor,
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                        scale: 10 * scale
+                    };
+                } else if (markerStyle === 'tooth') {
+                    return {
+                        path: 'M12 2C8.5 2 6 4.5 6 7.5C6 10 7 11.5 8 13C9 14.5 10 16 10 18C10 20 11 22 12 22C13 22 14 20 14 18C14 16 15 14.5 16 13C17 11.5 18 10 18 7.5C18 4.5 15.5 2 12 2Z',
+                        fillColor: fillColor,
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 1.5,
+                        scale: 1.5 * scale,
+                        anchor: new google.maps.Point(12, 22)
+                    };
+                } else {
+                    return {
+                        path: 'M12 0C7.31 0 3.5 3.81 3.5 8.5C3.5 14.88 12 24 12 24S20.5 14.88 20.5 8.5C20.5 3.81 16.69 0 12 0ZM12 12C10.07 12 8.5 10.43 8.5 8.5C8.5 6.57 10.07 5 12 5C13.93 5 15.5 6.57 15.5 8.5C15.5 10.43 13.93 12 12 12Z',
+                        fillColor: fillColor,
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 1.5,
+                        scale: 1.3 * scale,
+                        anchor: new google.maps.Point(12, 24)
+                    };
+                }
+            }
             
             // Helper function to escape HTML for info windows
             function escapeHtml(text) {
@@ -1424,9 +1641,7 @@ class EnamelStoreLocator {
                 var map = new google.maps.Map(mapContainer, {
                     center: defaultCenter,
                     zoom: defaultZoom,
-                    styles: [
-                        { featureType: "poi", stylers: [{ visibility: "off" }] }
-                    ]
+                    styles: getMapStyles()
                 });
                 
                 var bounds = new google.maps.LatLngBounds();
@@ -1451,7 +1666,8 @@ class EnamelStoreLocator {
                     var marker = new google.maps.Marker({
                         position: position,
                         map: map,
-                        title: safeName
+                        title: safeName,
+                        icon: createMarkerIcon(markerColor, false)
                     });
                     
                     // Build info window with pre-escaped content and visibility checks
@@ -1473,7 +1689,11 @@ class EnamelStoreLocator {
                     var infoWindow = new google.maps.InfoWindow({ content: infoContent });
                     
                     marker.addListener('click', function() {
-                        markers.forEach(function(m) { m.infoWindow.close(); });
+                        markers.forEach(function(m) {
+                            m.infoWindow.close();
+                            m.setIcon(createMarkerIcon(markerColor, false));
+                        });
+                        marker.setIcon(createMarkerIcon(markerColor, true));
                         infoWindow.open(map, marker);
                     });
                     
@@ -1696,6 +1916,13 @@ class EnamelStoreLocator {
             'schedule_button_text' => get_option('enamel_sl_schedule_button_text', 'Schedule Online'),
             'directions_button_text' => get_option('enamel_sl_directions_button_text', 'Get Directions'),
             'call_button_text' => get_option('enamel_sl_call_button_text', 'Call Now'),
+            // Map styling
+            'map_style' => get_option('enamel_sl_map_style', 'standard'),
+            'custom_map_style' => get_option('enamel_sl_custom_map_style', ''),
+            // Marker settings
+            'marker_color' => get_option('enamel_sl_marker_color', '#7D55C7'),
+            'marker_style' => get_option('enamel_sl_marker_style', 'pin'),
+            'active_marker_color' => get_option('enamel_sl_active_marker_color', '#E56B10'),
             // Colors
             'primary_color' => get_option('enamel_sl_primary_color', '#7D55C7'),
             'secondary_color' => get_option('enamel_sl_secondary_color', '#5a3d96'),
@@ -1834,6 +2061,17 @@ class EnamelStoreLocator {
     
     public function sanitize_checkbox($value) {
         return ($value === '1' || $value === 1) ? '1' : '0';
+    }
+    
+    public function sanitize_json($value) {
+        if (empty($value)) {
+            return '';
+        }
+        $decoded = json_decode($value);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $value;
+        }
+        return '';
     }
 }
 
