@@ -964,11 +964,27 @@ class EnamelStoreLocator {
                     font-family: <?php echo esc_attr($settings['primary_font']); ?>, sans-serif;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-header {
-                    background: <?php echo esc_attr($settings['header_background']); ?>;
+                    background: linear-gradient(135deg, <?php echo esc_attr($settings['header_background']); ?> 0%, <?php echo esc_attr($settings['primary_color']); ?> 100%);
                     color: #fff;
-                    padding: 30px 20px;
+                    padding: 48px 32px 80px 32px;
                     text-align: center;
-                    border-radius: 8px 8px 0 0;
+                    border-radius: 16px 16px 24px 24px;
+                    position: relative;
+                    margin-bottom: -40px;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-header-title {
+                    margin: 0 0 8px 0;
+                    font-size: 2rem;
+                    font-weight: 700;
+                    letter-spacing: -0.02em;
+                }
+                #<?php echo esc_attr($container_id); ?> .esl-header-subtitle {
+                    margin: 0;
+                    font-size: 1rem;
+                    opacity: 0.9;
+                    max-width: 520px;
+                    margin-left: auto;
+                    margin-right: auto;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-content {
                     display: flex;
@@ -1106,24 +1122,29 @@ class EnamelStoreLocator {
                     color: <?php echo esc_attr($settings['text_secondary']); ?>;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-search-box {
-                    padding: 16px;
+                    padding: 24px;
                     background: <?php echo esc_attr($settings['card_bg']); ?>;
-                    border-radius: 8px;
-                    margin-bottom: 16px;
+                    border-radius: 16px;
+                    margin-bottom: 20px;
                     border: 1px solid <?php echo esc_attr($settings['border_color']); ?>;
+                    box-shadow: 0 18px 45px rgba(125, 85, 199, 0.12), 0 8px 20px rgba(0, 0, 0, 0.06);
+                    position: relative;
+                    z-index: 10;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-search-title {
-                    font-size: 0.9em;
-                    font-weight: 600;
-                    margin: 0 0 12px 0;
+                    font-size: 1.1em;
+                    font-weight: 700;
+                    margin: 0 0 16px 0;
                     color: <?php echo esc_attr($settings['text_color']); ?>;
+                    letter-spacing: -0.01em;
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-search-input {
                     width: 100%;
-                    padding: 10px 12px 10px 36px;
+                    height: 44px;
+                    padding: 0 12px 0 40px;
                     border: 1px solid <?php echo esc_attr($settings['border_color']); ?>;
-                    border-radius: 6px;
-                    font-size: 0.9em;
+                    border-radius: 8px;
+                    font-size: 0.95em;
                     box-sizing: border-box;
                     background: <?php echo esc_attr($settings['background_color']); ?>;
                     color: <?php echo esc_attr($settings['text_color']); ?>;
@@ -1147,13 +1168,14 @@ class EnamelStoreLocator {
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-search-btn {
                     width: 100%;
-                    padding: 10px 16px;
+                    height: 44px;
+                    padding: 0 20px;
                     background: <?php echo esc_attr($settings['primary_color']); ?>;
                     color: <?php echo esc_attr($settings['button_text_color']); ?>;
                     border: none;
-                    border-radius: 6px;
-                    font-size: 0.9em;
-                    font-weight: 500;
+                    border-radius: 8px;
+                    font-size: 0.95em;
+                    font-weight: 600;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
@@ -1188,13 +1210,14 @@ class EnamelStoreLocator {
                 }
                 #<?php echo esc_attr($container_id); ?> .esl-location-btn {
                     width: 100%;
-                    padding: 10px 16px;
+                    height: 44px;
+                    padding: 0 20px;
                     background: transparent;
                     color: <?php echo esc_attr($settings['primary_color']); ?>;
-                    border: 1px solid <?php echo esc_attr($settings['primary_color']); ?>;
-                    border-radius: 6px;
-                    font-size: 0.9em;
-                    font-weight: 500;
+                    border: 2px solid <?php echo esc_attr($settings['primary_color']); ?>;
+                    border-radius: 8px;
+                    font-size: 0.95em;
+                    font-weight: 600;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
@@ -1233,8 +1256,8 @@ class EnamelStoreLocator {
             </style>
             
             <div class="esl-header">
-                <h2 style="margin: 0 0 10px 0; font-size: 1.8em;"><?php echo esc_html($settings['header_main_title']); ?></h2>
-                <p style="margin: 0; opacity: 0.9;"><?php echo esc_html($settings['header_subtitle']); ?></p>
+                <h2 class="esl-header-title"><?php echo esc_html($settings['header_main_title']); ?></h2>
+                <p class="esl-header-subtitle"><?php echo esc_html($settings['header_subtitle']); ?></p>
             </div>
             
             <div class="esl-content">
