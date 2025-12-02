@@ -1838,13 +1838,36 @@ class EnamelStoreLocator {
             var callbackName = 'enamelInitMap_' + containerId.replace(/-/g, '_');
             if (typeof google !== 'undefined' && google.maps) {
                 initMap();
+                autoPromptLocation();
             } else {
                 var script = document.createElement('script');
                 script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&callback=' + callbackName;
                 script.async = true;
                 script.defer = true;
                 document.head.appendChild(script);
-                window[callbackName] = initMap;
+                window[callbackName] = function() {
+                    initMap();
+                    autoPromptLocation();
+                };
+            }
+            
+            // Auto-prompt for user location on page load
+            function autoPromptLocation() {
+                if (!navigator.geolocation) return;
+                
+                // Small delay to let map render first
+                setTimeout(function() {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            sortLocationsByDistance(position.coords.latitude, position.coords.longitude);
+                        },
+                        function(error) {
+                            // Silent fail - user declined or error, they can still use manual search
+                            console.log('Auto-location not available:', error.message);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                    );
+                }, 500);
             }
         })();
         </script>

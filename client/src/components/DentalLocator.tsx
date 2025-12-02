@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import MapView, { type StoreLocation } from './MapView';
 import LocationCard from './LocationCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -72,6 +72,38 @@ export default function DentalLocator({
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
+  // Auto-prompt for user's location on page load
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.log('Geolocation is not supported');
+      return;
+    }
+
+    // Small delay to let page render first, then prompt for location
+    const timer = setTimeout(() => {
+      setIsLoadingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(location);
+          setMapCenter(location);
+          setIsLoadingLocation(false);
+          console.log('Auto-detected user location:', location);
+        },
+        (error) => {
+          console.log('User declined or error getting location:', error);
+          setIsLoadingLocation(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLocationSelect = useCallback((location: StoreLocation | null) => {
     setSelectedLocation(location);
