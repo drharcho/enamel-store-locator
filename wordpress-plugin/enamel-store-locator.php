@@ -190,8 +190,8 @@ class EnamelStoreLocator {
      * Register all plugin settings
      */
     private function register_settings() {
-        // General settings
-        $settings = array(
+        // General settings (Settings page)
+        $general_settings = array(
             'google_maps_api_key' => 'sanitize_text_field',
             'default_lat' => array($this, 'sanitize_latitude'),
             'default_lng' => array($this, 'sanitize_longitude'),
@@ -202,7 +202,17 @@ class EnamelStoreLocator {
             'schedule_button_text' => 'sanitize_text_field',
             'directions_button_text' => 'sanitize_text_field',
             'call_button_text' => 'sanitize_text_field',
-            // Branding - Colors
+        );
+        
+        foreach ($general_settings as $option_name => $sanitize_callback) {
+            register_setting('enamel_sl_settings', 'enamel_sl_' . $option_name, array(
+                'sanitize_callback' => $sanitize_callback
+            ));
+        }
+        
+        // Branding settings (Branding page) - separate group to avoid reset issue
+        $branding_settings = array(
+            // Colors
             'primary_color' => 'sanitize_hex_color',
             'secondary_color' => 'sanitize_hex_color',
             'accent_color' => 'sanitize_hex_color',
@@ -212,14 +222,14 @@ class EnamelStoreLocator {
             'text_primary' => 'sanitize_hex_color',
             'text_secondary' => 'sanitize_hex_color',
             'button_text_color' => 'sanitize_hex_color',
-            // Branding - Fonts
+            // Fonts
             'primary_font' => 'sanitize_text_field',
             'secondary_font' => 'sanitize_text_field',
             'font_size_base' => 'absint',
         );
         
-        foreach ($settings as $option_name => $sanitize_callback) {
-            register_setting('enamel_sl_settings', 'enamel_sl_' . $option_name, array(
+        foreach ($branding_settings as $option_name => $sanitize_callback) {
+            register_setting('enamel_sl_branding', 'enamel_sl_' . $option_name, array(
                 'sanitize_callback' => $sanitize_callback
             ));
         }
@@ -766,7 +776,7 @@ class EnamelStoreLocator {
         <div class="wrap">
             <h1><?php _e('Branding & Appearance', 'enamel-store-locator'); ?></h1>
             <form method="post" action="options.php">
-                <?php settings_fields('enamel_sl_settings'); ?>
+                <?php settings_fields('enamel_sl_branding'); ?>
                 
                 <h2><?php _e('Typography', 'enamel-store-locator'); ?></h2>
                 <table class="form-table">
