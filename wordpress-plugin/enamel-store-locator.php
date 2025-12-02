@@ -1851,7 +1851,7 @@ class EnamelStoreLocator {
                 };
             }
             
-            // Auto-prompt for user location on page load
+            // Auto-prompt for user location on page load (silent - no scrolling)
             function autoPromptLocation() {
                 if (!navigator.geolocation) return;
                 
@@ -1859,7 +1859,8 @@ class EnamelStoreLocator {
                 setTimeout(function() {
                     navigator.geolocation.getCurrentPosition(
                         function(position) {
-                            sortLocationsByDistance(position.coords.latitude, position.coords.longitude);
+                            // Silent sort - just reorder cards by distance without scrolling or map changes
+                            sortLocationsSilent(position.coords.latitude, position.coords.longitude);
                         },
                         function(error) {
                             // Silent fail - user declined or error, they can still use manual search
@@ -1868,6 +1869,33 @@ class EnamelStoreLocator {
                         { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
                     );
                 }, 500);
+            }
+            
+            // Silent sort - reorders location cards by distance without scrolling or map changes
+            function sortLocationsSilent(userLat, userLng) {
+                var locationsContainer = document.getElementById(containerId + '-locations');
+                if (!locationsContainer) return;
+                
+                var cards = Array.from(locationsContainer.querySelectorAll('.esl-location-card'));
+                if (cards.length === 0) return;
+                
+                // Calculate distances and sort
+                cards.sort(function(a, b) {
+                    var latA = parseFloat(a.getAttribute('data-lat'));
+                    var lngA = parseFloat(a.getAttribute('data-lng'));
+                    var latB = parseFloat(b.getAttribute('data-lat'));
+                    var lngB = parseFloat(b.getAttribute('data-lng'));
+                    var distA = calculateDistance(userLat, userLng, latA, lngA);
+                    var distB = calculateDistance(userLat, userLng, latB, lngB);
+                    return distA - distB;
+                });
+                
+                // Re-append cards in sorted order (no scrolling)
+                cards.forEach(function(card) {
+                    locationsContainer.appendChild(card);
+                });
+                
+                console.log('Locations sorted by distance (silent)');
             }
         })();
         </script>

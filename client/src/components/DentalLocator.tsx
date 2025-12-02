@@ -73,7 +73,7 @@ export default function DentalLocator({
   const [searchValue, setSearchValue] = useState('');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  // Auto-prompt for user's location on page load
+  // Auto-prompt for user's location on page load (without scrolling)
   useEffect(() => {
     if (!navigator.geolocation) {
       console.log('Geolocation is not supported');
@@ -82,21 +82,18 @@ export default function DentalLocator({
 
     // Small delay to let page render first, then prompt for location
     const timer = setTimeout(() => {
-      setIsLoadingLocation(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const location = {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
+          // Only update user location for distance calculations, don't center map or scroll
           setUserLocation(location);
-          setMapCenter(location);
-          setIsLoadingLocation(false);
           console.log('Auto-detected user location:', location);
         },
         (error) => {
           console.log('User declined or error getting location:', error);
-          setIsLoadingLocation(false);
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
