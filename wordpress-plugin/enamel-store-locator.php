@@ -199,6 +199,11 @@ class EnamelStoreLocator {
             'header_main_title' => 'sanitize_text_field',
             'header_subtitle' => 'sanitize_textarea_field',
             'search_input_placeholder' => 'sanitize_text_field',
+            // Button visibility toggles (default ON)
+            'enable_schedule_button' => array($this, 'sanitize_checkbox'),
+            'enable_directions_button' => array($this, 'sanitize_checkbox'),
+            'enable_call_button' => array($this, 'sanitize_checkbox'),
+            // Button text labels
             'schedule_button_text' => 'sanitize_text_field',
             'directions_button_text' => 'sanitize_text_field',
             'call_button_text' => 'sanitize_text_field',
@@ -730,17 +735,46 @@ class EnamelStoreLocator {
                         <th><label for="enamel_sl_search_input_placeholder"><?php _e('Search Placeholder', 'enamel-store-locator'); ?></label></th>
                         <td><input type="text" id="enamel_sl_search_input_placeholder" name="enamel_sl_search_input_placeholder" value="<?php echo esc_attr(get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code')); ?>" class="regular-text" /></td>
                     </tr>
+                </table>
+                
+                <h2><?php _e('Button Visibility', 'enamel-store-locator'); ?></h2>
+                <p class="description"><?php _e('Choose which buttons to display on location cards. All buttons are enabled by default.', 'enamel-store-locator'); ?></p>
+                <table class="form-table">
                     <tr>
-                        <th><label for="enamel_sl_schedule_button_text"><?php _e('Schedule Button Text', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_schedule_button_text" name="enamel_sl_schedule_button_text" value="<?php echo esc_attr(get_option('enamel_sl_schedule_button_text', 'Schedule Online')); ?>" class="regular-text" /></td>
+                        <th><label for="enamel_sl_enable_schedule_button"><?php _e('Schedule Button', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" id="enamel_sl_enable_schedule_button" name="enamel_sl_enable_schedule_button" value="1" <?php checked(get_option('enamel_sl_enable_schedule_button', '1'), '1'); ?> />
+                                <?php _e('Show "Schedule Online" button', 'enamel-store-locator'); ?>
+                            </label>
+                            <br />
+                            <input type="text" id="enamel_sl_schedule_button_text" name="enamel_sl_schedule_button_text" value="<?php echo esc_attr(get_option('enamel_sl_schedule_button_text', 'Schedule Online')); ?>" class="regular-text" style="margin-top: 5px;" />
+                            <p class="description"><?php _e('Button text label', 'enamel-store-locator'); ?></p>
+                        </td>
                     </tr>
                     <tr>
-                        <th><label for="enamel_sl_directions_button_text"><?php _e('Directions Button Text', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_directions_button_text" name="enamel_sl_directions_button_text" value="<?php echo esc_attr(get_option('enamel_sl_directions_button_text', 'Get Directions')); ?>" class="regular-text" /></td>
+                        <th><label for="enamel_sl_enable_directions_button"><?php _e('Directions Button', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" id="enamel_sl_enable_directions_button" name="enamel_sl_enable_directions_button" value="1" <?php checked(get_option('enamel_sl_enable_directions_button', '1'), '1'); ?> />
+                                <?php _e('Show "Get Directions" button', 'enamel-store-locator'); ?>
+                            </label>
+                            <br />
+                            <input type="text" id="enamel_sl_directions_button_text" name="enamel_sl_directions_button_text" value="<?php echo esc_attr(get_option('enamel_sl_directions_button_text', 'Get Directions')); ?>" class="regular-text" style="margin-top: 5px;" />
+                            <p class="description"><?php _e('Button text label', 'enamel-store-locator'); ?></p>
+                        </td>
                     </tr>
                     <tr>
-                        <th><label for="enamel_sl_call_button_text"><?php _e('Call Button Text', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_call_button_text" name="enamel_sl_call_button_text" value="<?php echo esc_attr(get_option('enamel_sl_call_button_text', 'Call Now')); ?>" class="regular-text" /></td>
+                        <th><label for="enamel_sl_enable_call_button"><?php _e('Call Button', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" id="enamel_sl_enable_call_button" name="enamel_sl_enable_call_button" value="1" <?php checked(get_option('enamel_sl_enable_call_button', '1'), '1'); ?> />
+                                <?php _e('Show "Call Now" button', 'enamel-store-locator'); ?>
+                            </label>
+                            <br />
+                            <input type="text" id="enamel_sl_call_button_text" name="enamel_sl_call_button_text" value="<?php echo esc_attr(get_option('enamel_sl_call_button_text', 'Call Now')); ?>" class="regular-text" style="margin-top: 5px;" />
+                            <p class="description"><?php _e('Button text label', 'enamel-store-locator'); ?></p>
+                        </td>
                     </tr>
                 </table>
                 
