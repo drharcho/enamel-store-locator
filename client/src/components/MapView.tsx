@@ -13,6 +13,7 @@ export interface StoreLocation {
   phone?: string;
   hours?: string;
   distance?: number;
+  scheduleLink?: string;
 }
 
 interface MapViewProps {

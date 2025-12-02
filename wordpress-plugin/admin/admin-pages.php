@@ -366,6 +366,33 @@ class EnamelStoreLocatorAdmin {
                     </div>
                 </div>
                 <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Schedule Button', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'schedule_button_text',
+                            'default' => 'Schedule Online',
+                            'class' => 'regular-text',
+                            'description' => 'Leave empty to hide the button'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Schedule Link URL', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::text_field_callback(array(
+                            'field' => 'schedule_link_url',
+                            'default' => '',
+                            'class' => 'regular-text',
+                            'description' => 'URL to your online scheduling page or booking system',
+                            'placeholder' => 'https://example.com/schedule'
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
                     <label class="enamel-field-label"><?php _e('Footer Text', 'enamel-store-locator'); ?></label>
                     <div class="enamel-field-control">
                         <?php

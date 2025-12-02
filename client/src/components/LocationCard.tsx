@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Phone, Clock, Navigation, ExternalLink } from 'lucide-react';
+import { MapPin, Phone, Clock, Navigation, ExternalLink, Calendar } from 'lucide-react';
 import type { StoreLocation } from './MapView';
 
 interface LocationCardProps {
@@ -9,6 +9,7 @@ interface LocationCardProps {
   isSelected?: boolean;
   onSelect?: (store: StoreLocation) => void;
   onGetDirections?: (store: StoreLocation) => void;
+  scheduleButtonText?: string;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export default function LocationCard({
   isSelected = false,
   onSelect,
   onGetDirections,
+  scheduleButtonText = "Schedule Online",
   className = ""
 }: LocationCardProps) {
   const handleCardClick = () => {
@@ -79,16 +81,32 @@ export default function LocationCard({
           </div>
         )}
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-2 flex-wrap">
           <Button 
             size="sm" 
-            className="flex-1"
+            className="flex-1 min-w-[100px]"
             onClick={handleDirectionsClick}
             data-testid={`button-directions-card-${store.id}`}
           >
             <Navigation className="w-4 h-4 mr-2" />
             Directions
           </Button>
+          
+          {store.scheduleLink && (
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(store.scheduleLink, '_blank');
+                console.log('Schedule clicked for:', store.name);
+              }}
+              data-testid={`button-schedule-${store.id}`}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              {scheduleButtonText}
+            </Button>
+          )}
           
           <Button 
             size="sm" 
