@@ -2067,11 +2067,17 @@ class EnamelStoreLocator {
         if (empty($value)) {
             return '';
         }
-        $decoded = json_decode($value);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            return $value;
+        // Limit payload size to 32KB
+        if (strlen($value) > 32768) {
+            return '';
         }
-        return '';
+        $decoded = json_decode($value, true);
+        // Must be valid JSON and an array (map styles are always arrays)
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            return '';
+        }
+        // Re-encode to ensure clean output
+        return wp_json_encode($decoded);
     }
 }
 
