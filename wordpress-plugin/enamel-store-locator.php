@@ -1761,15 +1761,18 @@ class EnamelStoreLocator {
                     mapData.map.setCenter({ lat: parseFloat(nearest.location.lat), lng: parseFloat(nearest.location.lng) });
                     mapData.map.setZoom(13);
                     
-                    // Highlight the nearest card
+                    // Find and highlight the nearest card by coordinates (not index, since DOM may be reordered)
                     var allCards = document.querySelectorAll('#' + containerId + ' .esl-location-card');
                     allCards.forEach(function(c) { c.classList.remove('active'); });
-                    if (allCards[nearest.index]) {
-                        allCards[nearest.index].classList.add('active');
-                        allCards[nearest.index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // Find card matching the nearest location's coordinates
+                    var nearestCard = document.querySelector('#' + containerId + ' .esl-location-card[data-lat="' + nearest.location.lat + '"][data-lng="' + nearest.location.lng + '"]');
+                    if (nearestCard) {
+                        nearestCard.classList.add('active');
+                        nearestCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
                     
-                    // Open info window for nearest location
+                    // Open info window for nearest location (markers array still uses original index)
                     if (mapData.markers[nearest.index]) {
                         google.maps.event.trigger(mapData.markers[nearest.index], 'click');
                     }

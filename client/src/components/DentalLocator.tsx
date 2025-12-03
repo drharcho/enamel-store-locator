@@ -129,6 +129,36 @@ export default function DentalLocator({
     setSelectedLocation(null);
   }, []);
 
+  // Helper function to calculate distance between two points (Haversine formula)
+  const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }, []);
+
+  // Find nearest location to given coordinates
+  const findNearestLocation = useCallback((userLat: number, userLng: number): StoreLocation | null => {
+    if (DENTAL_LOCATIONS.length === 0) return null;
+    
+    let nearest = DENTAL_LOCATIONS[0];
+    let minDistance = calculateDistance(userLat, userLng, nearest.lat, nearest.lng);
+    
+    for (const location of DENTAL_LOCATIONS) {
+      const distance = calculateDistance(userLat, userLng, location.lat, location.lng);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearest = location;
+      }
+    }
+    
+    return nearest;
+  }, [calculateDistance]);
+
   const handleCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
       console.log('Geolocation is not supported');
@@ -143,8 +173,17 @@ export default function DentalLocator({
           lng: position.coords.longitude
         };
         setUserLocation(location);
-        setMapCenter(location);
-        setSelectedLocation(null);
+        
+        // Find and select the nearest location
+        const nearest = findNearestLocation(location.lat, location.lng);
+        if (nearest) {
+          setSelectedLocation(nearest);
+          setMapCenter({ lat: nearest.lat, lng: nearest.lng });
+          console.log('Nearest location found:', nearest.name);
+        } else {
+          setMapCenter(location);
+        }
+        
         setIsLoadingLocation(false);
         console.log('Current location obtained:', location);
       },
@@ -154,7 +193,7 @@ export default function DentalLocator({
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }, []);
+  }, [findNearestLocation]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
