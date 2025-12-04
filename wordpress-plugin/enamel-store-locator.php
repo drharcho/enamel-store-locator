@@ -1961,7 +1961,7 @@ class EnamelStoreLocator {
         return array(
             'header_main_title' => get_option('enamel_sl_header_main_title', 'Find Your Nearest Location'),
             'header_subtitle' => get_option('enamel_sl_header_subtitle', 'Quality dental care across Texas with convenient locations'),
-            'search_input_placeholder' => get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code'),
+            'search_input_placeholder' => get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code') ?: 'Enter address or zip code',
             // Button visibility (default ON for all)
             'enable_schedule_button' => get_option('enamel_sl_enable_schedule_button', '1'),
             'enable_directions_button' => get_option('enamel_sl_enable_directions_button', '1'),
