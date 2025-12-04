@@ -203,6 +203,8 @@ class EnamelStoreLocator {
             'marker_color' => 'sanitize_hex_color',
             'marker_style' => 'sanitize_text_field',
             'active_marker_color' => 'sanitize_hex_color',
+            'custom_marker_image' => 'esc_url_raw',
+            'custom_active_marker_image' => 'esc_url_raw',
             // Text labels
             'header_main_title' => 'sanitize_text_field',
             'header_subtitle' => 'sanitize_textarea_field',
@@ -779,19 +781,63 @@ class EnamelStoreLocator {
                                     'pin' => 'Classic Pin',
                                     'circle' => 'Circle Dot',
                                     'tooth' => 'Dental Tooth',
+                                    'custom' => 'Custom Image (Upload Below)',
                                 );
                                 foreach ($marker_styles as $value => $label) {
                                     printf('<option value="%s" %s>%s</option>', esc_attr($value), selected($current_marker, $value, false), esc_html($label));
                                 }
                                 ?>
                             </select>
+                            <p class="description"><?php _e('Choose a built-in style or upload your own custom marker image', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr id="custom_marker_row" style="<?php echo $current_marker === 'custom' ? '' : 'display:none;'; ?>">
+                        <th><label for="enamel_sl_custom_marker_image"><?php _e('Custom Marker Image', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <?php $custom_marker_url = get_option('enamel_sl_custom_marker_image', ''); ?>
+                            <div class="enamel-media-upload">
+                                <input type="text" id="enamel_sl_custom_marker_image" name="enamel_sl_custom_marker_image" value="<?php echo esc_url($custom_marker_url); ?>" class="regular-text" placeholder="https://example.com/marker.png" />
+                                <button type="button" class="button enamel-upload-btn" data-target="enamel_sl_custom_marker_image"><?php _e('Upload Image', 'enamel-store-locator'); ?></button>
+                                <button type="button" class="button enamel-remove-btn" data-target="enamel_sl_custom_marker_image" <?php echo empty($custom_marker_url) ? 'style="display:none;"' : ''; ?>><?php _e('Remove', 'enamel-store-locator'); ?></button>
+                            </div>
+                            <?php if (!empty($custom_marker_url)): ?>
+                            <div class="enamel-marker-preview" id="preview_enamel_sl_custom_marker_image" style="margin-top: 10px;">
+                                <img src="<?php echo esc_url($custom_marker_url); ?>" alt="Custom marker preview" style="max-height: 50px; border: 1px solid #ddd; padding: 5px; background: #f9f9f9;" />
+                            </div>
+                            <?php else: ?>
+                            <div class="enamel-marker-preview" id="preview_enamel_sl_custom_marker_image" style="margin-top: 10px; display:none;">
+                                <img src="" alt="Custom marker preview" style="max-height: 50px; border: 1px solid #ddd; padding: 5px; background: #f9f9f9;" />
+                            </div>
+                            <?php endif; ?>
+                            <p class="description"><?php _e('Recommended size: 32x32 to 64x64 pixels. PNG with transparency works best.', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr id="custom_active_marker_row" style="<?php echo $current_marker === 'custom' ? '' : 'display:none;'; ?>">
+                        <th><label for="enamel_sl_custom_active_marker_image"><?php _e('Custom Active Marker', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <?php $custom_active_marker_url = get_option('enamel_sl_custom_active_marker_image', ''); ?>
+                            <div class="enamel-media-upload">
+                                <input type="text" id="enamel_sl_custom_active_marker_image" name="enamel_sl_custom_active_marker_image" value="<?php echo esc_url($custom_active_marker_url); ?>" class="regular-text" placeholder="https://example.com/marker-active.png" />
+                                <button type="button" class="button enamel-upload-btn" data-target="enamel_sl_custom_active_marker_image"><?php _e('Upload Image', 'enamel-store-locator'); ?></button>
+                                <button type="button" class="button enamel-remove-btn" data-target="enamel_sl_custom_active_marker_image" <?php echo empty($custom_active_marker_url) ? 'style="display:none;"' : ''; ?>><?php _e('Remove', 'enamel-store-locator'); ?></button>
+                            </div>
+                            <?php if (!empty($custom_active_marker_url)): ?>
+                            <div class="enamel-marker-preview" id="preview_enamel_sl_custom_active_marker_image" style="margin-top: 10px;">
+                                <img src="<?php echo esc_url($custom_active_marker_url); ?>" alt="Active marker preview" style="max-height: 50px; border: 1px solid #ddd; padding: 5px; background: #f9f9f9;" />
+                            </div>
+                            <?php else: ?>
+                            <div class="enamel-marker-preview" id="preview_enamel_sl_custom_active_marker_image" style="margin-top: 10px; display:none;">
+                                <img src="" alt="Active marker preview" style="max-height: 50px; border: 1px solid #ddd; padding: 5px; background: #f9f9f9;" />
+                            </div>
+                            <?php endif; ?>
+                            <p class="description"><?php _e('Optional: Different marker for selected/active locations. Uses default custom marker if empty.', 'enamel-store-locator'); ?></p>
                         </td>
                     </tr>
                     <tr>
                         <th><label for="enamel_sl_active_marker_color"><?php _e('Active Marker Color', 'enamel-store-locator'); ?></label></th>
                         <td>
                             <input type="text" id="enamel_sl_active_marker_color" name="enamel_sl_active_marker_color" value="<?php echo esc_attr(get_option('enamel_sl_active_marker_color', '#E56B10')); ?>" class="enamel-color-picker" />
-                            <p class="description"><?php _e('Color when a location is selected', 'enamel-store-locator'); ?></p>
+                            <p class="description"><?php _e('Color when a location is selected (applies to built-in marker styles only)', 'enamel-store-locator'); ?></p>
                         </td>
                     </tr>
                 </table>
@@ -799,12 +845,63 @@ class EnamelStoreLocator {
                 <script>
                 jQuery(document).ready(function($) {
                     $('.enamel-color-picker').wpColorPicker();
+                    
+                    // Map style toggle
                     $('#enamel_sl_map_style').on('change', function() {
                         if ($(this).val() === 'custom') {
                             $('#custom_map_style_row').show();
                         } else {
                             $('#custom_map_style_row').hide();
                         }
+                    });
+                    
+                    // Marker style toggle - show/hide custom marker upload fields
+                    $('#enamel_sl_marker_style').on('change', function() {
+                        if ($(this).val() === 'custom') {
+                            $('#custom_marker_row, #custom_active_marker_row').show();
+                        } else {
+                            $('#custom_marker_row, #custom_active_marker_row').hide();
+                        }
+                    });
+                    
+                    // Media uploader for custom markers
+                    var mediaUploader;
+                    $('.enamel-upload-btn').on('click', function(e) {
+                        e.preventDefault();
+                        var targetId = $(this).data('target');
+                        var $input = $('#' + targetId);
+                        var $removeBtn = $(this).siblings('.enamel-remove-btn');
+                        var $preview = $('#preview_' + targetId);
+                        
+                        if (mediaUploader) {
+                            mediaUploader.open();
+                            return;
+                        }
+                        
+                        mediaUploader = wp.media({
+                            title: '<?php _e('Select Marker Image', 'enamel-store-locator'); ?>',
+                            button: { text: '<?php _e('Use This Image', 'enamel-store-locator'); ?>' },
+                            multiple: false,
+                            library: { type: 'image' }
+                        });
+                        
+                        mediaUploader.on('select', function() {
+                            var attachment = mediaUploader.state().get('selection').first().toJSON();
+                            $input.val(attachment.url);
+                            $removeBtn.show();
+                            $preview.show().find('img').attr('src', attachment.url);
+                        });
+                        
+                        mediaUploader.open();
+                    });
+                    
+                    // Remove marker image
+                    $('.enamel-remove-btn').on('click', function(e) {
+                        e.preventDefault();
+                        var targetId = $(this).data('target');
+                        $('#' + targetId).val('');
+                        $(this).hide();
+                        $('#preview_' + targetId).hide().find('img').attr('src', '');
                     });
                 });
                 </script>
@@ -1498,6 +1595,8 @@ class EnamelStoreLocator {
             var markerColor = '<?php echo $safe_marker_color; ?>';
             var activeMarkerColor = '<?php echo $safe_active_marker_color; ?>';
             var markerStyle = '<?php echo $safe_marker_style; ?>';
+            var customMarkerImage = '<?php echo esc_js(esc_url($settings['custom_marker_image'])); ?>';
+            var customActiveMarkerImage = '<?php echo esc_js(esc_url($settings['custom_active_marker_image'])); ?>';
             var mapStylePreset = '<?php echo $safe_map_style; ?>';
             var customMapStyle = '<?php echo $safe_custom_map_style; ?>';
             var showDirections = <?php echo $show_directions ? 'true' : 'false'; ?>;
@@ -1592,6 +1691,25 @@ class EnamelStoreLocator {
             function createMarkerIcon(color, isActive) {
                 var fillColor = isActive ? activeMarkerColor : color;
                 var scale = isActive ? 1.2 : 1;
+                
+                // Custom image marker (with fallback to default pin if no image)
+                if (markerStyle === 'custom') {
+                    // Check if we have a valid custom marker image
+                    if (customMarkerImage) {
+                        var imageUrl = customMarkerImage;
+                        // Use active image if available and marker is active, otherwise use default custom image
+                        if (isActive && customActiveMarkerImage) {
+                            imageUrl = customActiveMarkerImage;
+                        }
+                        var size = isActive ? 48 : 40; // Slightly larger when active
+                        return {
+                            url: imageUrl,
+                            scaledSize: new google.maps.Size(size, size),
+                            anchor: new google.maps.Point(size / 2, size)
+                        };
+                    }
+                    // Fall through to default pin if custom image is missing
+                }
                 
                 if (markerStyle === 'circle') {
                     return {
@@ -1977,6 +2095,8 @@ class EnamelStoreLocator {
             'marker_color' => get_option('enamel_sl_marker_color', '#7D55C7'),
             'marker_style' => get_option('enamel_sl_marker_style', 'pin'),
             'active_marker_color' => get_option('enamel_sl_active_marker_color', '#E56B10'),
+            'custom_marker_image' => get_option('enamel_sl_custom_marker_image', ''),
+            'custom_active_marker_image' => get_option('enamel_sl_custom_active_marker_image', ''),
             // Colors
             'primary_color' => get_option('enamel_sl_primary_color', '#7D55C7'),
             'secondary_color' => get_option('enamel_sl_secondary_color', '#5a3d96'),
@@ -2023,6 +2143,7 @@ class EnamelStoreLocator {
         if (strpos($hook, 'enamel-store-locator') !== false || $post_type === 'clinic_location') {
             wp_enqueue_script('wp-color-picker');
             wp_enqueue_style('wp-color-picker');
+            wp_enqueue_media(); // For custom marker image upload
             
             // Add inline script for location meta box
             wp_add_inline_script('jquery', '
