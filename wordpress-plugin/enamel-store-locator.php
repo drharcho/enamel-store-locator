@@ -72,6 +72,10 @@ class EnamelStoreLocator {
         // AJAX hooks for Google Places API
         add_action('wp_ajax_enamel_fetch_place_details', array($this, 'ajax_fetch_place_details'));
         
+        // WP Rocket compatibility - safelist our CSS from Remove Unused CSS
+        add_filter('rocket_rucss_safelist', array($this, 'wp_rocket_safelist'));
+        add_filter('rocket_exclude_css', array($this, 'wp_rocket_exclude_css'));
+        
         // Create custom post type for locations
         $this->create_location_post_type();
     }
@@ -1148,311 +1152,7 @@ class EnamelStoreLocator {
         // Build the HTML output
         ob_start();
         ?>
-        <div id="<?php echo esc_attr($container_id); ?>" class="enamel-store-locator-container" style="width: <?php echo esc_attr($atts['width']); ?>; min-height: <?php echo esc_attr($atts['height']); ?>;">
-            
-            <style>
-                #<?php echo esc_attr($container_id); ?> {
-                    font-family: <?php echo esc_attr($settings['secondary_font']); ?>, sans-serif;
-                    font-size: <?php echo esc_attr($settings['font_size_base']); ?>px;
-                    background: <?php echo esc_attr($settings['background_color']); ?>;
-                    color: <?php echo esc_attr($settings['text_primary']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> h1, 
-                #<?php echo esc_attr($container_id); ?> h2, 
-                #<?php echo esc_attr($container_id); ?> h3 {
-                    font-family: <?php echo esc_attr($settings['primary_font']); ?>, sans-serif;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-header {
-                    background: linear-gradient(135deg, <?php echo esc_attr($settings['header_background']); ?> 0%, <?php echo esc_attr($settings['primary_color']); ?> 100%);
-                    color: <?php echo esc_attr($settings['header_text_color']); ?>;
-                    padding: 48px 32px 32px 32px;
-                    text-align: center;
-                    border-radius: 0;
-                    position: relative;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-header-title {
-                    margin: 0 0 8px 0;
-                    font-size: 2rem;
-                    font-weight: 700;
-                    letter-spacing: -0.02em;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-header-subtitle {
-                    margin: 0;
-                    font-size: 1rem;
-                    opacity: 0.9;
-                    max-width: 520px;
-                    margin-left: auto;
-                    margin-right: auto;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-content {
-                    display: flex;
-                    flex-wrap: wrap;
-                    min-height: 400px;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-sidebar {
-                    width: 380px;
-                    max-height: 550px;
-                    overflow-y: auto;
-                    padding: 16px;
-                    background: <?php echo esc_attr($settings['background_color']); ?>;
-                    border-right: 1px solid #e5e7eb;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-map {
-                    flex: 1;
-                    min-width: 300px;
-                    min-height: 400px;
-                    background: #e5e5e5;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-locations-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-card {
-                    background: <?php echo esc_attr($settings['card_background']); ?>;
-                    color: <?php echo esc_attr($settings['card_text_color']); ?>;
-                    border-radius: 12px;
-                    padding: 20px;
-                    border: 1px solid #e5e7eb;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-card:hover {
-                    box-shadow: 0 10px 25px -8px rgba(0,0,0,0.18), 0 4px 10px -4px rgba(0,0,0,0.1);
-                    transform: translateY(-3px);
-                    border-color: <?php echo esc_attr($settings['primary_color']); ?>50;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-card.active {
-                    border-color: <?php echo esc_attr($settings['primary_color']); ?>;
-                    box-shadow: 0 0 0 3px <?php echo esc_attr($settings['primary_color']); ?>25, 0 4px 6px -1px rgba(0,0,0,0.08);
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-name {
-                    font-family: <?php echo esc_attr($settings['primary_font']); ?>, sans-serif;
-                    font-weight: 700;
-                    font-size: 1.2em;
-                    margin-bottom: 14px;
-                    color: <?php echo esc_attr($settings['primary_color']); ?>;
-                    line-height: 1.3;
-                    letter-spacing: -0.01em;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-info {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    margin-bottom: 16px;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-info-row {
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 10px;
-                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
-                    font-size: 0.9em;
-                    line-height: 1.5;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-info-icon {
-                    flex-shrink: 0;
-                    width: 18px;
-                    height: 18px;
-                    margin-top: 2px;
-                    color: <?php echo esc_attr($settings['primary_color']); ?>;
-                    opacity: 0.7;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-address {
-                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
-                    font-size: 0.9em;
-                    margin-bottom: 8px;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-phone {
-                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
-                    font-size: 0.9em;
-                    margin-bottom: 12px;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-buttons {
-                    display: flex;
-                    gap: 10px;
-                    flex-wrap: wrap;
-                    padding-top: 12px;
-                    border-top: 1px solid #f0f0f0;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn {
-                    padding: 10px 18px;
-                    border-radius: 8px;
-                    font-size: 0.875em;
-                    font-weight: 600;
-                    text-decoration: none;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    cursor: pointer;
-                    border: none;
-                    transition: all 0.2s ease;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn-primary {
-                    background: <?php echo esc_attr($settings['primary_color']); ?>;
-                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn-primary:hover {
-                    filter: brightness(1.05);
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn-accent {
-                    background: <?php echo esc_attr($settings['accent_color']); ?>;
-                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn-accent:hover {
-                    filter: brightness(1.05);
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn-outline {
-                    background: transparent;
-                    border: 2px solid <?php echo esc_attr($settings['primary_color']); ?>;
-                    color: <?php echo esc_attr($settings['primary_color']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-btn-outline:hover {
-                    background: <?php echo esc_attr($settings['primary_color']); ?>10;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-no-locations {
-                    padding: 40px;
-                    text-align: center;
-                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-box {
-                    padding: 24px;
-                    background: <?php echo esc_attr($settings['card_bg']); ?>;
-                    border-radius: 16px;
-                    margin-bottom: 20px;
-                    border: 1px solid <?php echo esc_attr($settings['border_color']); ?>;
-                    box-shadow: 0 18px 45px rgba(125, 85, 199, 0.12), 0 8px 20px rgba(0, 0, 0, 0.06);
-                    position: relative;
-                    z-index: 10;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-title {
-                    font-size: 1.1em;
-                    font-weight: 700;
-                    margin: 0 0 16px 0;
-                    color: <?php echo esc_attr($settings['card_text_color']); ?>;
-                    letter-spacing: -0.01em;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-input {
-                    width: 100%;
-                    height: 44px;
-                    padding: 0 12px 0 40px;
-                    border: 1px solid <?php echo esc_attr($settings['border_color']); ?>;
-                    border-radius: 8px;
-                    font-size: 0.95em;
-                    box-sizing: border-box;
-                    background: <?php echo esc_attr($settings['background_color']); ?>;
-                    color: <?php echo esc_attr($settings['card_text_color']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-input:focus {
-                    outline: none;
-                    border-color: <?php echo esc_attr($settings['primary_color']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-input-wrapper {
-                    position: relative;
-                    margin-bottom: 12px;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-icon {
-                    position: absolute;
-                    left: 12px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    width: 16px;
-                    height: 16px;
-                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-btn {
-                    width: 100%;
-                    height: 44px;
-                    padding: 0 20px;
-                    background: <?php echo esc_attr($settings['primary_color']); ?>;
-                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 0.95em;
-                    font-weight: 600;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    transition: opacity 0.2s;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-btn:hover {
-                    opacity: 0.9;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-btn:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-divider {
-                    display: flex;
-                    align-items: center;
-                    margin: 12px 0;
-                    color: <?php echo esc_attr($settings['text_secondary']); ?>;
-                    font-size: 0.75em;
-                    text-transform: uppercase;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-divider::before,
-                #<?php echo esc_attr($container_id); ?> .esl-search-divider::after {
-                    content: '';
-                    flex: 1;
-                    height: 1px;
-                    background: <?php echo esc_attr($settings['border_color']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-search-divider span {
-                    padding: 0 10px;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-btn {
-                    width: 100%;
-                    height: 44px;
-                    padding: 0 20px;
-                    background: transparent;
-                    color: <?php echo esc_attr($settings['primary_color']); ?>;
-                    border: 2px solid <?php echo esc_attr($settings['primary_color']); ?>;
-                    border-radius: 8px;
-                    font-size: 0.95em;
-                    font-weight: 600;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    transition: background 0.2s, color 0.2s;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-btn:hover {
-                    background: <?php echo esc_attr($settings['primary_color']); ?>;
-                    color: <?php echo esc_attr($settings['button_text_color']); ?>;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-location-btn:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-                #<?php echo esc_attr($container_id); ?> .esl-spinner {
-                    width: 16px;
-                    height: 16px;
-                    border: 2px solid currentColor;
-                    border-top-color: transparent;
-                    border-radius: 50%;
-                    animation: esl-spin 0.8s linear infinite;
-                }
-                @keyframes esl-spin {
-                    to { transform: rotate(360deg); }
-                }
-                @media (max-width: 768px) {
-                    #<?php echo esc_attr($container_id); ?> .esl-content {
-                        flex-direction: column;
-                    }
-                    #<?php echo esc_attr($container_id); ?> .esl-sidebar {
-                        width: 100%;
-                        max-height: 300px;
-                    }
-                }
-            </style>
+        <div id="<?php echo esc_attr($container_id); ?>" class="enamel-store-locator-container" style="width: <?php echo esc_attr($atts['width']); ?>; min-height: <?php echo esc_attr($atts['height']); ?>; --esl-primary: <?php echo esc_attr($settings['primary_color']); ?>; --esl-accent: <?php echo esc_attr($settings['accent_color']); ?>; --esl-bg: <?php echo esc_attr($settings['background_color']); ?>; --esl-card-bg: <?php echo esc_attr($settings['card_background']); ?>; --esl-header-bg: <?php echo esc_attr($settings['header_background']); ?>; --esl-text: <?php echo esc_attr($settings['text_primary']); ?>; --esl-text-secondary: <?php echo esc_attr($settings['text_secondary']); ?>; --esl-btn-text: <?php echo esc_attr($settings['button_text_color']); ?>; --esl-header-text: <?php echo esc_attr($settings['header_text_color']); ?>; --esl-card-text: <?php echo esc_attr($settings['card_text_color']); ?>; --esl-font-heading: <?php echo esc_attr($settings['primary_font']); ?>; --esl-font-body: <?php echo esc_attr($settings['secondary_font']); ?>; --esl-font-size: <?php echo esc_attr($settings['font_size_base']); ?>px;">
             
             <div class="esl-header">
                 <h2 class="esl-header-title"><?php echo esc_html($settings['header_main_title']); ?></h2>
@@ -2051,12 +1751,33 @@ class EnamelStoreLocator {
     public function enqueue_frontend_scripts() {
         global $post;
         if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'enamel_store_locator')) {
+            // Load frontend CSS (external file for WP Rocket compatibility)
+            wp_enqueue_style('enamel-sl-frontend', ENAMEL_SL_PLUGIN_URL . 'assets/frontend.css', array(), ENAMEL_SL_VERSION);
+            
             // Load Google Fonts
             $primary_font = get_option('enamel_sl_primary_font', 'Montserrat');
             $secondary_font = get_option('enamel_sl_secondary_font', 'Rubik');
             $fonts = urlencode($primary_font . ':400,500,600,700|' . $secondary_font . ':400,500');
             wp_enqueue_style('enamel-sl-google-fonts', 'https://fonts.googleapis.com/css2?family=' . $fonts . '&display=swap');
         }
+    }
+    
+    /**
+     * WP Rocket RUCSS Safelist - preserve our CSS classes
+     */
+    public function wp_rocket_safelist($safelist) {
+        $safelist[] = '.enamel-store-locator-container';
+        $safelist[] = '.esl-(.*)';
+        $safelist[] = '/enamel-store-locator/assets/frontend.css';
+        return $safelist;
+    }
+    
+    /**
+     * WP Rocket CSS exclusion - exclude our CSS from optimization
+     */
+    public function wp_rocket_exclude_css($excluded) {
+        $excluded[] = '/wp-content/plugins/enamel-store-locator/assets/frontend.css';
+        return $excluded;
     }
     
     /**
