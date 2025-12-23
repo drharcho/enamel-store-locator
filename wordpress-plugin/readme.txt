@@ -4,7 +4,7 @@ Tags: store locator, maps, dental clinic, locations, google maps
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,14 @@ The plugin includes tools for managing locations through the WordPress admin. Bu
 
 == Changelog ==
 
+= 1.1.0 =
+* NEW: Custom marker upload - Use WordPress media library to upload custom default and active marker images
+* NEW: WP Rocket compatibility - Moved CSS to external file with safelist filters for "Remove Unused CSS" feature
+* NEW: Map style optimization - Only selected style preset is output (reduced payload ~80%)
+* IMPROVED: Card highlighting now uses coordinates instead of array index for reliability
+* IMPROVED: Reduced plugin code from 2,262 to 1,909 lines while maintaining all functionality
+* FIX: Better fallback to vector pins when custom marker images aren't provided
+
 = 1.0.0 =
 * Initial release
 * Google Maps integration
@@ -96,6 +104,9 @@ The plugin includes tools for managing locations through the WordPress admin. Bu
 * Comprehensive customization options
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Custom marker upload, WP Rocket compatibility, and performance optimizations. Update recommended.
 
 = 1.0.0 =
 Initial release of the Enamel Store Locator plugin.
