@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.2.2
+ * Version: 1.2.3
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.2.2');
+define('ENAMEL_SL_VERSION', '1.2.3');
 
 /**
  * Main Enamel Store Locator Class
@@ -1738,15 +1738,21 @@ class EnamelStoreLocator {
             
             if (lazyLoad && 'IntersectionObserver' in window) {
                 // Lazy load: wait until container enters viewport
-                var observer = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            observer.disconnect();
-                            loadGoogleMaps();
-                        }
-                    });
-                }, { rootMargin: '200px' }); // Load slightly before visible
-                observer.observe(container);
+                var containerElement = document.getElementById(containerId);
+                if (containerElement) {
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting) {
+                                observer.disconnect();
+                                loadGoogleMaps();
+                            }
+                        });
+                    }, { rootMargin: '200px' }); // Load slightly before visible
+                    observer.observe(containerElement);
+                } else {
+                    // Fallback if container not found
+                    loadGoogleMaps();
+                }
             } else {
                 // Immediate load (no lazy loading or browser doesn't support IntersectionObserver)
                 loadGoogleMaps();
