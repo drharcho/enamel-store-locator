@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.2.0');
+define('ENAMEL_SL_VERSION', '1.2.1');
 
 /**
  * Main Enamel Store Locator Class
@@ -197,6 +197,7 @@ class EnamelStoreLocator {
         // General settings (Settings page)
         $general_settings = array(
             'google_maps_api_key' => 'sanitize_text_field',
+            'google_maps_map_id' => 'sanitize_text_field',
             'default_lat' => array($this, 'sanitize_latitude'),
             'default_lng' => array($this, 'sanitize_longitude'),
             'default_zoom' => array($this, 'sanitize_zoom_level'),
@@ -716,6 +717,13 @@ class EnamelStoreLocator {
                         <td>
                             <input type="text" id="enamel_sl_google_maps_api_key" name="enamel_sl_google_maps_api_key" value="<?php echo esc_attr(get_option('enamel_sl_google_maps_api_key', '')); ?>" class="large-text" />
                             <p class="description"><?php _e('Required for Maps and Places API. Get one from', 'enamel-store-locator'); ?> <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_google_maps_map_id"><?php _e('Map ID', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="text" id="enamel_sl_google_maps_map_id" name="enamel_sl_google_maps_map_id" value="<?php echo esc_attr(get_option('enamel_sl_google_maps_map_id', '')); ?>" class="regular-text" placeholder="e.g., 8e0a97af9386fef" />
+                            <p class="description"><?php _e('Required for Advanced Markers. Create one in', 'enamel-store-locator'); ?> <a href="https://console.cloud.google.com/google/maps-apis/studio/maps" target="_blank">Google Cloud Console > Map Management</a><br><?php _e('Choose "JavaScript" platform when creating your Map ID.', 'enamel-store-locator'); ?></p>
                         </td>
                     </tr>
                 </table>
@@ -1280,6 +1288,8 @@ class EnamelStoreLocator {
             $safe_active_marker_color = esc_js(sanitize_hex_color($settings['active_marker_color']));
             $safe_marker_style = esc_js(sanitize_text_field($settings['marker_style']));
             $safe_api_key = esc_js(sanitize_text_field($api_key));
+            $map_id = get_option('enamel_sl_google_maps_map_id', '');
+            $safe_map_id = esc_js(sanitize_text_field($map_id));
             // Button visibility flags
             $show_directions = !empty($settings['enable_directions_button']);
             $show_schedule = !empty($settings['enable_schedule_button']);
@@ -1302,6 +1312,8 @@ class EnamelStoreLocator {
             var showDirections = <?php echo $show_directions ? 'true' : 'false'; ?>;
             var showSchedule = <?php echo $show_schedule ? 'true' : 'false'; ?>;
             var showCall = <?php echo $show_call ? 'true' : 'false'; ?>;
+            var mapId = '<?php echo $safe_map_id; ?>';
+            var useAdvancedMarkers = mapId.length > 0;
             
             <?php
             // Only output the selected map style (not all presets) for faster loading
@@ -1317,7 +1329,54 @@ class EnamelStoreLocator {
             ?>
             var mapStyle = <?php echo ($selected_style === 'custom' && !empty($settings['custom_map_style'])) ? $settings['custom_map_style'] : $style_json; ?>;
             
-            // Create marker icon based on style
+            // Create marker content for AdvancedMarkerElement (DOM element)
+            function createAdvancedMarkerContent(color, isActive) {
+                var fillColor = isActive ? activeMarkerColor : color;
+                var size = isActive ? 44 : 36;
+                var div = document.createElement('div');
+                div.style.cursor = 'pointer';
+                div.style.transition = 'transform 0.2s ease';
+                if (isActive) div.style.transform = 'scale(1.15)';
+                
+                // Custom image marker
+                if (markerStyle === 'custom' && customMarkerImage) {
+                    var img = document.createElement('img');
+                    img.src = (isActive && customActiveMarkerImage) ? customActiveMarkerImage : customMarkerImage;
+                    img.style.width = size + 'px';
+                    img.style.height = size + 'px';
+                    img.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                    div.appendChild(img);
+                    return div;
+                }
+                
+                // SVG markers for circle, tooth, and pin
+                var svgNS = 'http://www.w3.org/2000/svg';
+                var svg = document.createElementNS(svgNS, 'svg');
+                svg.setAttribute('width', size);
+                svg.setAttribute('height', size);
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                
+                var path = document.createElementNS(svgNS, 'path');
+                path.setAttribute('fill', fillColor);
+                path.setAttribute('stroke', '#ffffff');
+                path.setAttribute('stroke-width', '1.5');
+                
+                if (markerStyle === 'circle') {
+                    path.setAttribute('d', 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z');
+                } else if (markerStyle === 'tooth') {
+                    path.setAttribute('d', 'M12 2C8.5 2 6 4.5 6 7.5C6 10 7 11.5 8 13C9 14.5 10 16 10 18C10 20 11 22 12 22C13 22 14 20 14 18C14 16 15 14.5 16 13C17 11.5 18 10 18 7.5C18 4.5 15.5 2 12 2Z');
+                } else {
+                    // Default pin marker
+                    path.setAttribute('d', 'M12 0C7.31 0 3.5 3.81 3.5 8.5C3.5 14.88 12 24 12 24S20.5 14.88 20.5 8.5C20.5 3.81 16.69 0 12 0ZM12 12C10.07 12 8.5 10.43 8.5 8.5C8.5 6.57 10.07 5 12 5C13.93 5 15.5 6.57 15.5 8.5C15.5 10.43 13.93 12 12 12Z');
+                }
+                
+                svg.appendChild(path);
+                div.appendChild(svg);
+                return div;
+            }
+            
+            // Create marker icon for legacy Marker (icon object)
             function createMarkerIcon(color, isActive) {
                 var fillColor = isActive ? activeMarkerColor : color;
                 var scale = isActive ? 1.2 : 1;
@@ -1373,6 +1432,17 @@ class EnamelStoreLocator {
                 }
             }
             
+            // Update marker appearance (works for both legacy and advanced markers)
+            function updateMarkerAppearance(marker, isActive) {
+                if (useAdvancedMarkers && marker.content !== undefined) {
+                    // AdvancedMarkerElement: update DOM content
+                    marker.content = createAdvancedMarkerContent(markerColor, isActive);
+                } else if (typeof marker.setIcon === 'function') {
+                    // Legacy google.maps.Marker: update icon
+                    marker.setIcon(createMarkerIcon(markerColor, isActive));
+                }
+            }
+            
             // Helper function to escape HTML for info windows
             function escapeHtml(text) {
                 if (!text) return '';
@@ -1386,11 +1456,19 @@ class EnamelStoreLocator {
                 if (!mapContainer) return;
                 mapContainer.innerHTML = '';
                 
-                var map = new google.maps.Map(mapContainer, {
+                // Map options with optional Map ID for Advanced Markers
+                var mapOptions = {
                     center: defaultCenter,
                     zoom: defaultZoom,
                     styles: mapStyle
-                });
+                };
+                
+                // Add mapId for AdvancedMarkerElement support (if provided)
+                if (useAdvancedMarkers) {
+                    mapOptions.mapId = mapId;
+                }
+                
+                var map = new google.maps.Map(mapContainer, mapOptions);
                 
                 var bounds = new google.maps.LatLngBounds();
                 var markers = [];
@@ -1411,12 +1489,23 @@ class EnamelStoreLocator {
                     var safeZip = escapeHtml(String(location.zip || ''));
                     var safePhone = escapeHtml(String(location.phone || ''));
                     
-                    var marker = new google.maps.Marker({
-                        position: position,
-                        map: map,
-                        title: safeName,
-                        icon: createMarkerIcon(markerColor, false)
-                    });
+                    // Create marker - use AdvancedMarkerElement when Map ID is provided
+                    var marker;
+                    if (useAdvancedMarkers && google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+                        marker = new google.maps.marker.AdvancedMarkerElement({
+                            position: position,
+                            map: map,
+                            title: safeName,
+                            content: createAdvancedMarkerContent(markerColor, false)
+                        });
+                    } else {
+                        marker = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            title: safeName,
+                            icon: createMarkerIcon(markerColor, false)
+                        });
+                    }
                     
                     // Build info window with pre-escaped content and visibility checks
                     var buttonsHtml = '';
@@ -1439,9 +1528,9 @@ class EnamelStoreLocator {
                     marker.addListener('click', function() {
                         markers.forEach(function(m) {
                             m.infoWindow.close();
-                            m.setIcon(createMarkerIcon(markerColor, false));
+                            updateMarkerAppearance(m, false);
                         });
-                        marker.setIcon(createMarkerIcon(markerColor, true));
+                        updateMarkerAppearance(marker, true);
                         infoWindow.open(map, marker);
                     });
                     
@@ -1453,7 +1542,9 @@ class EnamelStoreLocator {
                 if (markers.length > 1) {
                     map.fitBounds(bounds);
                 } else if (markers.length === 1) {
-                    map.setCenter(markers[0].getPosition());
+                    // AdvancedMarkerElement uses .position, legacy Marker uses .getPosition()
+                    var pos = markers[0].position || markers[0].getPosition();
+                    map.setCenter(pos);
                     map.setZoom(14);
                 }
                 
@@ -1467,7 +1558,8 @@ class EnamelStoreLocator {
                         card.classList.add('active');
                         
                         if (markers[index]) {
-                            map.setCenter(markers[index].getPosition());
+                            var pos = markers[index].position || markers[index].getPosition();
+                            map.setCenter(pos);
                             map.setZoom(15);
                             google.maps.event.trigger(markers[index], 'click');
                         }
@@ -1595,7 +1687,7 @@ class EnamelStoreLocator {
                     autoPromptLocation();
                 } else {
                     var script = document.createElement('script');
-                    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&loading=async&callback=' + callbackName;
+                    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&libraries=marker&loading=async&callback=' + callbackName;
                     script.async = true;
                     script.defer = true;
                     document.head.appendChild(script);
