@@ -4,7 +4,7 @@ Tags: store locator, maps, dental clinic, locations, google maps
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,14 @@ The plugin includes tools for managing locations through the WordPress admin. Bu
 
 == Changelog ==
 
+= 1.2.2 =
+* NEW: Performance Settings section added to Settings page with user-configurable options
+* NEW: Lazy loading toggle - Enable/disable lazy loading of Google Maps via admin
+* NEW: Defer scripts toggle - Enable/disable script deferring via admin
+* NEW: Preconnect hints toggle - Enable/disable preconnect hints via admin
+* CLEANUP: Removed ~1,400 lines of unused code (admin/, api/ folders, admin.js)
+* IMPROVED: Plugin now consists of only 3 core files for easier maintenance
+
 = 1.2.1 =
 * NEW: Google Map ID setting for Advanced Markers support
 * NEW: AdvancedMarkerElement migration - replaces deprecated google.maps.Marker
@@ -119,6 +127,9 @@ The plugin includes tools for managing locations through the WordPress admin. Bu
 * Comprehensive customization options
 
 == Upgrade Notice ==
+
+= 1.2.2 =
+Adds user-configurable Performance Settings (lazy loading, defer scripts, preconnect hints) and major code cleanup.
 
 = 1.2.1 =
 Fixes Google Maps deprecation warnings by adding AdvancedMarkerElement support. Add a Map ID in Settings to enable. Strongly recommended update.
