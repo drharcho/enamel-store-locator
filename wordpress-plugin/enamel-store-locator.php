@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.1.0');
+define('ENAMEL_SL_VERSION', '1.2.0');
 
 /**
  * Main Enamel Store Locator Class
@@ -221,6 +221,10 @@ class EnamelStoreLocator {
             'schedule_button_text' => 'sanitize_text_field',
             'directions_button_text' => 'sanitize_text_field',
             'call_button_text' => 'sanitize_text_field',
+            // Performance settings
+            'enable_lazy_load' => array($this, 'sanitize_checkbox'),
+            'defer_scripts' => array($this, 'sanitize_checkbox'),
+            'enable_preconnect' => array($this, 'sanitize_checkbox'),
         );
         
         foreach ($general_settings as $option_name => $sanitize_callback) {
@@ -1581,21 +1585,41 @@ class EnamelStoreLocator {
                 );
             });
             
-            // Load Google Maps
+            // Load Google Maps (with optional lazy loading)
             var callbackName = 'enamelInitMap_' + containerId.replace(/-/g, '_');
-            if (typeof google !== 'undefined' && google.maps) {
-                initMap();
-                autoPromptLocation();
-            } else {
-                var script = document.createElement('script');
-                script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&callback=' + callbackName;
-                script.async = true;
-                script.defer = true;
-                document.head.appendChild(script);
-                window[callbackName] = function() {
+            var lazyLoad = <?php echo get_option('enamel_sl_enable_lazy_load', '0') === '1' ? 'true' : 'false'; ?>;
+            
+            function loadGoogleMaps() {
+                if (typeof google !== 'undefined' && google.maps) {
                     initMap();
                     autoPromptLocation();
-                };
+                } else {
+                    var script = document.createElement('script');
+                    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&callback=' + callbackName;
+                    script.async = true;
+                    script.defer = true;
+                    document.head.appendChild(script);
+                    window[callbackName] = function() {
+                        initMap();
+                        autoPromptLocation();
+                    };
+                }
+            }
+            
+            if (lazyLoad && 'IntersectionObserver' in window) {
+                // Lazy load: wait until container enters viewport
+                var observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            observer.disconnect();
+                            loadGoogleMaps();
+                        }
+                    });
+                }, { rootMargin: '200px' }); // Load slightly before visible
+                observer.observe(container);
+            } else {
+                // Immediate load (no lazy loading or browser doesn't support IntersectionObserver)
+                loadGoogleMaps();
             }
             
             // Auto-prompt for user location on page load (silent - no scrolling)
@@ -1759,7 +1783,22 @@ class EnamelStoreLocator {
             $secondary_font = get_option('enamel_sl_secondary_font', 'Rubik');
             $fonts = urlencode($primary_font . ':400,500,600,700|' . $secondary_font . ':400,500');
             wp_enqueue_style('enamel-sl-google-fonts', 'https://fonts.googleapis.com/css2?family=' . $fonts . '&display=swap');
+            
+            // Add preconnect hints for Google domains (if enabled - default ON)
+            $enable_preconnect = get_option('enamel_sl_enable_preconnect', '1');
+            if ($enable_preconnect === '1') {
+                add_action('wp_head', array($this, 'add_preconnect_hints'), 1);
+            }
         }
+    }
+    
+    /**
+     * Add preconnect hints for Google domains
+     */
+    public function add_preconnect_hints() {
+        echo '<link rel="preconnect" href="https://maps.googleapis.com" crossorigin>' . "\n";
+        echo '<link rel="preconnect" href="https://maps.gstatic.com" crossorigin>' . "\n";
+        echo '<link rel="dns-prefetch" href="https://maps.googleapis.com">' . "\n";
     }
     
     /**

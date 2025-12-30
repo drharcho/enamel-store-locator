@@ -627,6 +627,52 @@ class EnamelStoreLocatorAdmin {
                 </div>
             </div>
         </div>
+        
+        <div class="enamel-form-section">
+            <div class="enamel-section-header">
+                <h3 class="enamel-section-title"><?php _e('Performance', 'enamel-store-locator'); ?></h3>
+                <p class="enamel-section-description"><?php _e('Optimize page load speed', 'enamel-store-locator'); ?></p>
+            </div>
+            <div class="enamel-section-content">
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Lazy Loading', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::checkbox_field_callback(array(
+                            'field' => 'enable_lazy_load',
+                            'label' => __('Lazy load the map when it enters the viewport', 'enamel-store-locator'),
+                            'description' => __('Delays loading Google Maps until the user scrolls to the store locator, improving initial page speed', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Defer Scripts', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::checkbox_field_callback(array(
+                            'field' => 'defer_scripts',
+                            'label' => __('Defer JavaScript loading', 'enamel-store-locator'),
+                            'description' => __('Loads scripts after the page content, reducing render-blocking', 'enamel-store-locator')
+                        ));
+                        ?>
+                    </div>
+                </div>
+                <div class="enamel-field-row">
+                    <label class="enamel-field-label"><?php _e('Preconnect', 'enamel-store-locator'); ?></label>
+                    <div class="enamel-field-control">
+                        <?php
+                        EnamelStoreLocatorFields::checkbox_field_callback(array(
+                            'field' => 'enable_preconnect',
+                            'label' => __('Add preconnect hints for Google domains', 'enamel-store-locator'),
+                            'description' => __('Speeds up Google Maps loading by establishing early connections', 'enamel-store-locator'),
+                            'default' => '1'
+                        ));
+                        ?>
+                    </div>
+                </div>
+            </div>
+        </div>
         <?php
     }
 }

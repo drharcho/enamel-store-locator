@@ -4,7 +4,7 @@ Tags: store locator, maps, dental clinic, locations, google maps
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,13 @@ The plugin includes tools for managing locations through the WordPress admin. Bu
 
 == Changelog ==
 
+= 1.2.0 =
+* NEW: Lazy loading option - Delays loading Google Maps until the user scrolls to the store locator
+* NEW: Defer scripts option - Loads JavaScript after page content to reduce render-blocking
+* NEW: Preconnect hints - Establishes early connections to Google domains for faster map loading (enabled by default)
+* NEW: Performance settings section in admin panel
+* IMPROVED: IntersectionObserver used for efficient lazy loading with 200px pre-load margin
+
 = 1.1.0 =
 * NEW: Custom marker upload - Use WordPress media library to upload custom default and active marker images
 * NEW: WP Rocket compatibility - Moved CSS to external file with safelist filters for "Remove Unused CSS" feature
@@ -104,6 +111,9 @@ The plugin includes tools for managing locations through the WordPress admin. Bu
 * Comprehensive customization options
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Performance improvements with lazy loading, deferred scripts, and preconnect hints. Update recommended.
 
 = 1.1.0 =
 Custom marker upload, WP Rocket compatibility, and performance optimizations. Update recommended.
