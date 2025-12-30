@@ -982,6 +982,44 @@ class EnamelStoreLocator {
                     </tr>
                 </table>
                 
+                <h2><?php _e('Performance Settings', 'enamel-store-locator'); ?></h2>
+                <p class="description"><?php _e('Optimize loading speed and performance. These settings are especially useful for pages with multiple store locators or heavy content.', 'enamel-store-locator'); ?></p>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="enamel_sl_enable_lazy_load"><?php _e('Lazy Loading', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label>
+                                <input type="hidden" name="enamel_sl_enable_lazy_load" value="0" />
+                                <input type="checkbox" id="enamel_sl_enable_lazy_load" name="enamel_sl_enable_lazy_load" value="1" <?php checked(get_option('enamel_sl_enable_lazy_load', '0'), '1'); ?> />
+                                <?php _e('Enable lazy loading', 'enamel-store-locator'); ?>
+                            </label>
+                            <p class="description"><?php _e('Only load the Google Maps API when the store locator scrolls into view. Improves initial page load time.', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_defer_scripts"><?php _e('Defer Scripts', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label>
+                                <input type="hidden" name="enamel_sl_defer_scripts" value="0" />
+                                <input type="checkbox" id="enamel_sl_defer_scripts" name="enamel_sl_defer_scripts" value="1" <?php checked(get_option('enamel_sl_defer_scripts', '0'), '1'); ?> />
+                                <?php _e('Defer script loading', 'enamel-store-locator'); ?>
+                            </label>
+                            <p class="description"><?php _e('Load scripts with the defer attribute to prevent blocking page rendering.', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_enable_preconnect"><?php _e('Preconnect Hints', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label>
+                                <input type="hidden" name="enamel_sl_enable_preconnect" value="0" />
+                                <input type="checkbox" id="enamel_sl_enable_preconnect" name="enamel_sl_enable_preconnect" value="1" <?php checked(get_option('enamel_sl_enable_preconnect', '0'), '1'); ?> />
+                                <?php _e('Enable preconnect hints', 'enamel-store-locator'); ?>
+                            </label>
+                            <p class="description"><?php _e('Add preconnect hints for Google Maps domains to speed up initial connection.', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                
                 <?php submit_button(); ?>
             </form>
         </div>
