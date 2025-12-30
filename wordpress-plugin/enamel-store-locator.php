@@ -1595,7 +1595,7 @@ class EnamelStoreLocator {
                     autoPromptLocation();
                 } else {
                     var script = document.createElement('script');
-                    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&callback=' + callbackName;
+                    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&loading=async&callback=' + callbackName;
                     script.async = true;
                     script.defer = true;
                     document.head.appendChild(script);
