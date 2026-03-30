@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.2.3
+ * Version: 1.2.5
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.2.3');
+define('ENAMEL_SL_VERSION', '1.2.5');
 
 /**
  * Main Enamel Store Locator Class
@@ -2148,4 +2148,26 @@ function enamel_sl_check_for_update( $transient ) {
     }
 
     return $transient;
+}
+
+// ---------------------------------------------------------------------------
+// Fix folder rename issue when WordPress installs updates from GitHub zips
+// ---------------------------------------------------------------------------
+add_filter( 'upgrader_source_selection', 'enamel_sl_fix_update_folder', 10, 4 );
+
+function enamel_sl_fix_update_folder( $source, $remote_source, $upgrader, $extra ) {
+    if ( ! isset( $extra['plugin'] ) || strpos( $extra['plugin'], 'enamel-store-locator' ) === false ) {
+        return $source;
+    }
+
+    $correct = trailingslashit( $remote_source ) . 'enamel-store-locator/';
+
+    if ( $source !== $correct ) {
+        global $wp_filesystem;
+        if ( $wp_filesystem->move( $source, $correct ) ) {
+            return $correct;
+        }
+    }
+
+    return $source;
 }
