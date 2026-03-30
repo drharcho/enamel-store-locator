@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.2.6
+ * Version: 1.3.0
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.2.6');
+define('ENAMEL_SL_VERSION', '1.3.0');
 
 /**
  * Main Enamel Store Locator Class
@@ -1317,504 +1317,51 @@ class EnamelStoreLocator {
             
         </div>
         
-        <?php 
+        <?php
         $api_key = get_option('enamel_sl_google_maps_api_key');
-        if ($api_key): 
-            // Prepare safe data for JavaScript - use wp_json_encode with proper flags
-            $safe_locations = wp_json_encode($locations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-            $safe_container_id = esc_js($container_id);
-            $safe_primary_color = esc_js(sanitize_hex_color($settings['primary_color']));
-            $safe_accent_color = esc_js(sanitize_hex_color($settings['accent_color']));
-            $safe_marker_color = esc_js(sanitize_hex_color($settings['marker_color']));
-            $safe_active_marker_color = esc_js(sanitize_hex_color($settings['active_marker_color']));
-            $safe_marker_style = esc_js(sanitize_text_field($settings['marker_style']));
-            $safe_api_key = esc_js(sanitize_text_field($api_key));
+        if ($api_key):
             $map_id = get_option('enamel_sl_google_maps_map_id', '');
-            $safe_map_id = esc_js(sanitize_text_field($map_id));
-            // Button visibility flags
-            $show_directions = !empty($settings['enable_directions_button']);
-            $show_schedule = !empty($settings['enable_schedule_button']);
-            $show_call = !empty($settings['enable_call_button']);
-        ?>
-        <script>
-        (function() {
-            var locations = <?php echo $safe_locations; ?>;
-            var mapContainerId = '<?php echo $safe_container_id; ?>-map';
-            var containerId = '<?php echo $safe_container_id; ?>';
-            var defaultCenter = { lat: <?php echo floatval($atts['center_lat']); ?>, lng: <?php echo floatval($atts['center_lng']); ?> };
-            var defaultZoom = <?php echo intval($atts['zoom']); ?>;
-            var primaryColor = '<?php echo $safe_primary_color; ?>';
-            var accentColor = '<?php echo $safe_accent_color; ?>';
-            var markerColor = '<?php echo $safe_marker_color; ?>';
-            var activeMarkerColor = '<?php echo $safe_active_marker_color; ?>';
-            var markerStyle = '<?php echo $safe_marker_style; ?>';
-            var customMarkerImage = '<?php echo esc_js(esc_url($settings['custom_marker_image'])); ?>';
-            var customActiveMarkerImage = '<?php echo esc_js(esc_url($settings['custom_active_marker_image'])); ?>';
-            var showDirections = <?php echo $show_directions ? 'true' : 'false'; ?>;
-            var showSchedule = <?php echo $show_schedule ? 'true' : 'false'; ?>;
-            var showCall = <?php echo $show_call ? 'true' : 'false'; ?>;
-            var mapId = '<?php echo $safe_map_id; ?>';
-            var useAdvancedMarkers = mapId.length > 0;
-            
-            <?php
-            // Only output the selected map style (not all presets) for faster loading
             $map_styles = array(
-                'standard' => '[{"featureType":"poi","stylers":[{"visibility":"off"}]}]',
-                'silver' => '[{"elementType":"geometry","stylers":[{"color":"#f5f5f5"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#f5f5f5"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#ffffff"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#dadada"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#c9c9c9"}]}]',
-                'retro' => '[{"elementType":"geometry","stylers":[{"color":"#ebe3cd"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#523735"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#f5f1e6"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#f8c967"}]},{"featureType":"water","elementType":"geometry.fill","stylers":[{"color":"#b9d3c2"}]}]',
-                'dark' => '[{"elementType":"geometry","stylers":[{"color":"#212121"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#212121"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#2c2c2c"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#3c3c3c"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#000000"}]}]',
-                'aubergine' => '[{"elementType":"geometry","stylers":[{"color":"#1d2c4d"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#8ec3b9"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#1a3646"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#304a7d"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#2c6675"}]},{"featureType":"water","elementType":"geometry.fill","stylers":[{"color":"#171f29"}]}]'
+                'standard'  => '[{"featureType":"poi","stylers":[{"visibility":"off"}]}]',
+                'silver'    => '[{"elementType":"geometry","stylers":[{"color":"#f5f5f5"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#f5f5f5"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#ffffff"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#dadada"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#c9c9c9"}]}]',
+                'retro'     => '[{"elementType":"geometry","stylers":[{"color":"#ebe3cd"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#523735"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#f5f1e6"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#f8c967"}]},{"featureType":"water","elementType":"geometry.fill","stylers":[{"color":"#b9d3c2"}]}]',
+                'dark'      => '[{"elementType":"geometry","stylers":[{"color":"#212121"}]},{"elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#212121"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#2c2c2c"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#3c3c3c"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#000000"}]}]',
+                'aubergine' => '[{"elementType":"geometry","stylers":[{"color":"#1d2c4d"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#8ec3b9"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#1a3646"}]},{"featureType":"poi","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#304a7d"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#2c6675"}]},{"featureType":"water","elementType":"geometry.fill","stylers":[{"color":"#171f29"}]}]',
             );
             $selected_style = $settings['map_style'];
-            $style_json = isset($map_styles[$selected_style]) ? $map_styles[$selected_style] : $map_styles['standard'];
-            ?>
-            var mapStyle = <?php echo ($selected_style === 'custom' && !empty($settings['custom_map_style'])) ? $settings['custom_map_style'] : $style_json; ?>;
-            
-            // Create marker content for AdvancedMarkerElement (DOM element)
-            function createAdvancedMarkerContent(color, isActive) {
-                var fillColor = isActive ? activeMarkerColor : color;
-                var size = isActive ? 44 : 36;
-                var div = document.createElement('div');
-                div.style.cursor = 'pointer';
-                div.style.transition = 'transform 0.2s ease';
-                if (isActive) div.style.transform = 'scale(1.15)';
-                
-                // Custom image marker
-                if (markerStyle === 'custom' && customMarkerImage) {
-                    var img = document.createElement('img');
-                    img.src = (isActive && customActiveMarkerImage) ? customActiveMarkerImage : customMarkerImage;
-                    img.style.width = size + 'px';
-                    img.style.height = size + 'px';
-                    img.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
-                    div.appendChild(img);
-                    return div;
-                }
-                
-                // SVG markers for circle, tooth, and pin
-                var svgNS = 'http://www.w3.org/2000/svg';
-                var svg = document.createElementNS(svgNS, 'svg');
-                svg.setAttribute('width', size);
-                svg.setAttribute('height', size);
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
-                
-                var path = document.createElementNS(svgNS, 'path');
-                path.setAttribute('fill', fillColor);
-                path.setAttribute('stroke', '#ffffff');
-                path.setAttribute('stroke-width', '1.5');
-                
-                if (markerStyle === 'circle') {
-                    path.setAttribute('d', 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z');
-                } else if (markerStyle === 'tooth') {
-                    path.setAttribute('d', 'M12 2C8.5 2 6 4.5 6 7.5C6 10 7 11.5 8 13C9 14.5 10 16 10 18C10 20 11 22 12 22C13 22 14 20 14 18C14 16 15 14.5 16 13C17 11.5 18 10 18 7.5C18 4.5 15.5 2 12 2Z');
-                } else {
-                    // Default pin marker
-                    path.setAttribute('d', 'M12 0C7.31 0 3.5 3.81 3.5 8.5C3.5 14.88 12 24 12 24S20.5 14.88 20.5 8.5C20.5 3.81 16.69 0 12 0ZM12 12C10.07 12 8.5 10.43 8.5 8.5C8.5 6.57 10.07 5 12 5C13.93 5 15.5 6.57 15.5 8.5C15.5 10.43 13.93 12 12 12Z');
-                }
-                
-                svg.appendChild(path);
-                div.appendChild(svg);
-                return div;
-            }
-            
-            // Create marker icon for legacy Marker (icon object)
-            function createMarkerIcon(color, isActive) {
-                var fillColor = isActive ? activeMarkerColor : color;
-                var scale = isActive ? 1.2 : 1;
-                
-                // Custom image marker (with fallback to default pin if no image)
-                if (markerStyle === 'custom') {
-                    // Check if we have a valid custom marker image
-                    if (customMarkerImage) {
-                        var imageUrl = customMarkerImage;
-                        // Use active image if available and marker is active, otherwise use default custom image
-                        if (isActive && customActiveMarkerImage) {
-                            imageUrl = customActiveMarkerImage;
-                        }
-                        var size = isActive ? 48 : 40; // Slightly larger when active
-                        return {
-                            url: imageUrl,
-                            scaledSize: new google.maps.Size(size, size),
-                            anchor: new google.maps.Point(size / 2, size)
-                        };
-                    }
-                    // Fall through to default pin if custom image is missing
-                }
-                
-                if (markerStyle === 'circle') {
-                    return {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: fillColor,
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 2,
-                        scale: 10 * scale
-                    };
-                } else if (markerStyle === 'tooth') {
-                    return {
-                        path: 'M12 2C8.5 2 6 4.5 6 7.5C6 10 7 11.5 8 13C9 14.5 10 16 10 18C10 20 11 22 12 22C13 22 14 20 14 18C14 16 15 14.5 16 13C17 11.5 18 10 18 7.5C18 4.5 15.5 2 12 2Z',
-                        fillColor: fillColor,
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 1.5,
-                        scale: 1.5 * scale,
-                        anchor: new google.maps.Point(12, 22)
-                    };
-                } else {
-                    return {
-                        path: 'M12 0C7.31 0 3.5 3.81 3.5 8.5C3.5 14.88 12 24 12 24S20.5 14.88 20.5 8.5C20.5 3.81 16.69 0 12 0ZM12 12C10.07 12 8.5 10.43 8.5 8.5C8.5 6.57 10.07 5 12 5C13.93 5 15.5 6.57 15.5 8.5C15.5 10.43 13.93 12 12 12Z',
-                        fillColor: fillColor,
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 1.5,
-                        scale: 1.3 * scale,
-                        anchor: new google.maps.Point(12, 24)
-                    };
-                }
-            }
-            
-            // Update marker appearance (works for both legacy and advanced markers)
-            function updateMarkerAppearance(marker, isActive) {
-                if (useAdvancedMarkers && marker.content !== undefined) {
-                    // AdvancedMarkerElement: update DOM content
-                    marker.content = createAdvancedMarkerContent(markerColor, isActive);
-                } else if (typeof marker.setIcon === 'function') {
-                    // Legacy google.maps.Marker: update icon
-                    marker.setIcon(createMarkerIcon(markerColor, isActive));
-                }
-            }
-            
-            // Helper function to escape HTML for info windows
-            function escapeHtml(text) {
-                if (!text) return '';
-                var div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-            
-            function initMap() {
-                var mapContainer = document.getElementById(mapContainerId);
-                if (!mapContainer) return;
-                mapContainer.innerHTML = '';
-                
-                // Map options with optional Map ID for Advanced Markers
-                var mapOptions = {
-                    center: defaultCenter,
-                    zoom: defaultZoom,
-                    styles: mapStyle
-                };
-                
-                // Add mapId for AdvancedMarkerElement support (if provided)
-                if (useAdvancedMarkers) {
-                    mapOptions.mapId = mapId;
-                }
-                
-                var map = new google.maps.Map(mapContainer, mapOptions);
-                
-                var bounds = new google.maps.LatLngBounds();
-                var markers = [];
-                
-                locations.forEach(function(location) {
-                    // Validate coordinates are finite numbers
-                    var lat = parseFloat(location.lat);
-                    var lng = parseFloat(location.lng);
-                    if (!isFinite(lat) || !isFinite(lng)) return;
-                    
-                    var position = { lat: lat, lng: lng };
-                    
-                    // Pre-escape all strings for safe HTML insertion
-                    var safeName = escapeHtml(String(location.name || ''));
-                    var safeAddress = escapeHtml(String(location.address || ''));
-                    var safeCity = escapeHtml(String(location.city || ''));
-                    var safeState = escapeHtml(String(location.state || ''));
-                    var safeZip = escapeHtml(String(location.zip || ''));
-                    var safePhone = escapeHtml(String(location.phone || ''));
-                    
-                    // Create marker - use AdvancedMarkerElement when Map ID is provided
-                    var marker;
-                    if (useAdvancedMarkers && google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
-                        marker = new google.maps.marker.AdvancedMarkerElement({
-                            position: position,
-                            map: map,
-                            title: safeName,
-                            content: createAdvancedMarkerContent(markerColor, false)
-                        });
-                    } else {
-                        marker = new google.maps.Marker({
-                            position: position,
-                            map: map,
-                            title: safeName,
-                            icon: createMarkerIcon(markerColor, false)
-                        });
-                    }
-                    
-                    // Build info window with pre-escaped content and visibility checks
-                    var buttonsHtml = '';
-                    if (showDirections) {
-                        buttonsHtml += '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng) + '" target="_blank" rel="noopener" style="background: ' + primaryColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Directions</a>';
-                    }
-                    if (showSchedule && location.booking_url) {
-                        buttonsHtml += '<a href="' + encodeURI(String(location.booking_url)) + '" target="_blank" rel="noopener" style="background: ' + accentColor + '; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">Book</a>';
-                    }
-                    
-                    var infoContent = '<div style="padding: 10px; max-width: 250px;">' +
-                        '<h3 style="margin: 0 0 8px 0; font-size: 16px;">' + safeName + '</h3>' +
-                        '<p style="margin: 0 0 8px 0; font-size: 13px; color: #666;">' + safeAddress + '<br>' + safeCity + ', ' + safeState + ' ' + safeZip + '</p>' +
-                        (safePhone ? '<p style="margin: 0 0 10px 0; font-size: 13px;">' + safePhone + '</p>' : '') +
-                        (buttonsHtml ? '<div style="display: flex; gap: 8px;">' + buttonsHtml + '</div>' : '') +
-                        '</div>';
-                    
-                    var infoWindow = new google.maps.InfoWindow({ content: infoContent });
-                    
-                    marker.addListener('click', function() {
-                        markers.forEach(function(m) {
-                            m.infoWindow.close();
-                            updateMarkerAppearance(m, false);
-                        });
-                        updateMarkerAppearance(marker, true);
-                        infoWindow.open(map, marker);
-                    });
-                    
-                    marker.infoWindow = infoWindow;
-                    markers.push(marker);
-                    bounds.extend(position);
-                });
-                
-                if (markers.length > 1) {
-                    map.fitBounds(bounds);
-                } else if (markers.length === 1) {
-                    // AdvancedMarkerElement uses .position, legacy Marker uses .getPosition()
-                    var pos = markers[0].position || markers[0].getPosition();
-                    map.setCenter(pos);
-                    map.setZoom(14);
-                }
-                
-                // Click on location cards to focus marker and highlight card
-                var allCards = document.querySelectorAll('#' + containerId + ' .esl-location-card');
-                allCards.forEach(function(card, index) {
-                    card.addEventListener('click', function() {
-                        // Remove active class from all cards
-                        allCards.forEach(function(c) { c.classList.remove('active'); });
-                        // Add active class to clicked card
-                        card.classList.add('active');
-                        
-                        if (markers[index]) {
-                            var pos = markers[index].position || markers[index].getPosition();
-                            map.setCenter(pos);
-                            map.setZoom(15);
-                            google.maps.event.trigger(markers[index], 'click');
-                        }
-                    });
-                });
-                
-                // Store map and markers for search functionality
-                window['eslMap_' + containerId] = { map: map, markers: markers };
-            }
-            
-            // Calculate distance between two coordinates (in miles)
-            function calculateDistance(lat1, lng1, lat2, lng2) {
-                var R = 3959; // Earth's radius in miles
-                var dLat = (lat2 - lat1) * Math.PI / 180;
-                var dLng = (lng2 - lng1) * Math.PI / 180;
-                var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                        Math.sin(dLng/2) * Math.sin(dLng/2);
-                var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                return R * c;
-            }
-            
-            // Sort and display locations by distance
-            function sortLocationsByDistance(userLat, userLng) {
-                var mapData = window['eslMap_' + containerId];
-                if (!mapData) return;
-                
-                var locationsWithDistance = locations.map(function(loc, index) {
-                    return {
-                        location: loc,
-                        index: index,
-                        distance: calculateDistance(userLat, userLng, parseFloat(loc.lat), parseFloat(loc.lng))
-                    };
-                }).sort(function(a, b) { return a.distance - b.distance; });
-                
-                // Highlight nearest and center map on it
-                if (locationsWithDistance.length > 0 && mapData.markers.length > 0) {
-                    var nearest = locationsWithDistance[0];
-                    mapData.map.setCenter({ lat: parseFloat(nearest.location.lat), lng: parseFloat(nearest.location.lng) });
-                    mapData.map.setZoom(13);
-                    
-                    // Find and highlight the nearest card by coordinates (not index, since DOM may be reordered)
-                    var allCards = document.querySelectorAll('#' + containerId + ' .esl-location-card');
-                    allCards.forEach(function(c) { c.classList.remove('active'); });
-                    
-                    // Find card matching the nearest location's coordinates
-                    var nearestCard = document.querySelector('#' + containerId + ' .esl-location-card[data-lat="' + nearest.location.lat + '"][data-lng="' + nearest.location.lng + '"]');
-                    if (nearestCard) {
-                        nearestCard.classList.add('active');
-                        nearestCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                    
-                    // Open info window for nearest location (markers array still uses original index)
-                    if (mapData.markers[nearest.index]) {
-                        google.maps.event.trigger(mapData.markers[nearest.index], 'click');
-                    }
-                }
-            }
-            
-            // Search button handler
-            document.getElementById(containerId + '-search-btn').addEventListener('click', function() {
-                var searchInput = document.getElementById(containerId + '-search');
-                var query = searchInput.value.trim();
-                if (!query) return;
-                
-                var geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ address: query }, function(results, status) {
-                    if (status === 'OK' && results[0]) {
-                        var location = results[0].geometry.location;
-                        sortLocationsByDistance(location.lat(), location.lng());
-                    } else {
-                        alert('Location not found. Please try a different address.');
-                    }
-                });
-            });
-            
-            // Enter key handler for search
-            document.getElementById(containerId + '-search').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    document.getElementById(containerId + '-search-btn').click();
-                }
-            });
-            
-            // Use My Location button handler
-            document.getElementById(containerId + '-location-btn').addEventListener('click', function() {
-                var btn = this;
-                var textSpan = btn.querySelector('.esl-location-btn-text');
-                var originalText = textSpan.textContent;
-                
-                if (!navigator.geolocation) {
-                    alert('Geolocation is not supported by your browser.');
-                    return;
-                }
-                
-                // Show loading state
-                btn.disabled = true;
-                textSpan.textContent = 'Getting location...';
-                
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        sortLocationsByDistance(position.coords.latitude, position.coords.longitude);
-                        btn.disabled = false;
-                        textSpan.textContent = originalText;
-                    },
-                    function(error) {
-                        btn.disabled = false;
-                        textSpan.textContent = originalText;
-                        var message = 'Unable to get your location.';
-                        if (error.code === 1) message = 'Location access denied. Please enable location permissions.';
-                        else if (error.code === 2) message = 'Location unavailable. Please try again.';
-                        else if (error.code === 3) message = 'Location request timed out. Please try again.';
-                        alert(message);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-                );
-            });
-            
-            // Load Google Maps (with optional lazy loading)
-            var callbackName = 'enamelInitMap_' + containerId.replace(/-/g, '_');
-            var lazyLoad = <?php echo get_option('enamel_sl_enable_lazy_load', '0') === '1' ? 'true' : 'false'; ?>;
-            
-            function loadGoogleMaps() {
-                if (typeof google !== 'undefined' && google.maps) {
-                    initMap();
-                    autoPromptLocation();
-                } else {
-                    var script = document.createElement('script');
-                    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $safe_api_key; ?>&libraries=marker&loading=async&callback=' + callbackName;
-                    script.async = true;
-                    script.defer = true;
-                    document.head.appendChild(script);
-                    window[callbackName] = function() {
-                        initMap();
-                        autoPromptLocation();
-                    };
-                }
-            }
-            
-            if (lazyLoad && 'IntersectionObserver' in window) {
-                // Lazy load: wait until container enters viewport
-                var containerElement = document.getElementById(containerId);
-                if (containerElement) {
-                    var observer = new IntersectionObserver(function(entries) {
-                        entries.forEach(function(entry) {
-                            if (entry.isIntersecting) {
-                                observer.disconnect();
-                                loadGoogleMaps();
-                            }
-                        });
-                    }, { rootMargin: '200px' }); // Load slightly before visible
-                    observer.observe(containerElement);
-                } else {
-                    // Fallback if container not found
-                    loadGoogleMaps();
-                }
-            } else {
-                // Immediate load (no lazy loading or browser doesn't support IntersectionObserver)
-                loadGoogleMaps();
-            }
-            
-            // Auto-prompt for user location on page load (silent - no scrolling)
-            function autoPromptLocation() {
-                if (!navigator.geolocation) return;
-                
-                // Small delay to let map render first
-                setTimeout(function() {
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            // Silent sort - just reorder cards by distance without scrolling or map changes
-                            sortLocationsSilent(position.coords.latitude, position.coords.longitude);
-                        },
-                        function(error) {
-                            // Silent fail - user declined or error, they can still use manual search
-                            console.log('Auto-location not available:', error.message);
-                        },
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-                    );
-                }, 500);
-            }
-            
-            // Silent sort - reorders location cards by distance without scrolling or map changes
-            function sortLocationsSilent(userLat, userLng) {
-                var locationsContainer = document.getElementById(containerId + '-locations');
-                if (!locationsContainer) return;
-                
-                var cards = Array.from(locationsContainer.querySelectorAll('.esl-location-card'));
-                if (cards.length === 0) return;
-                
-                // Calculate distances and sort
-                cards.sort(function(a, b) {
-                    var latA = parseFloat(a.getAttribute('data-lat'));
-                    var lngA = parseFloat(a.getAttribute('data-lng'));
-                    var latB = parseFloat(b.getAttribute('data-lat'));
-                    var lngB = parseFloat(b.getAttribute('data-lng'));
-                    var distA = calculateDistance(userLat, userLng, latA, lngA);
-                    var distB = calculateDistance(userLat, userLng, latB, lngB);
-                    return distA - distB;
-                });
-                
-                // Re-append cards in sorted order (no scrolling)
-                cards.forEach(function(card) {
-                    locationsContainer.appendChild(card);
-                });
-                
-                console.log('Locations sorted by distance (silent)');
-            }
-        })();
+            $style_json     = isset($map_styles[$selected_style]) ? $map_styles[$selected_style] : $map_styles['standard'];
+            $style_data     = json_decode(($selected_style === 'custom' && !empty($settings['custom_map_style'])) ? $settings['custom_map_style'] : $style_json);
+            $config = array(
+                'locations'               => $locations,
+                'defaultCenter'           => array('lat' => floatval($atts['center_lat']), 'lng' => floatval($atts['center_lng'])),
+                'defaultZoom'             => intval($atts['zoom']),
+                'primaryColor'            => sanitize_hex_color($settings['primary_color']),
+                'accentColor'             => sanitize_hex_color($settings['accent_color']),
+                'markerColor'             => sanitize_hex_color($settings['marker_color']),
+                'activeMarkerColor'       => sanitize_hex_color($settings['active_marker_color']),
+                'markerStyle'             => sanitize_text_field($settings['marker_style']),
+                'customMarkerImage'       => esc_url_raw($settings['custom_marker_image']),
+                'customActiveMarkerImage' => esc_url_raw($settings['custom_active_marker_image']),
+                'showDirections'          => !empty($settings['enable_directions_button']),
+                'showSchedule'            => !empty($settings['enable_schedule_button']),
+                'showCall'                => !empty($settings['enable_call_button']),
+                'mapId'                   => sanitize_text_field($map_id),
+                'useAdvancedMarkers'      => !empty($map_id),
+                'mapStyle'                => $style_data,
+                'apiKey'                  => sanitize_text_field($api_key),
+                'lazyLoad'                => get_option('enamel_sl_enable_lazy_load', '1') === '1',
+            );
+        ?>
+        <script>
+        window.enamelSLInstances = window.enamelSLInstances || {};
+        window.enamelSLInstances[<?php echo wp_json_encode($container_id); ?>] = <?php echo wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
         </script>
-        <?php endif; ?>
-        
+        <?php // frontend.js (enqueued externally) reads window.enamelSLInstances and initialises each locator. endif; ?>
+
         <?php
         return ob_get_clean();
     }
-    
+
     /**
      * Register REST API endpoints
      */
@@ -1934,13 +1481,10 @@ class EnamelStoreLocator {
         if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'enamel_store_locator')) {
             // Load frontend CSS (external file for WP Rocket compatibility)
             wp_enqueue_style('enamel-sl-frontend', ENAMEL_SL_PLUGIN_URL . 'assets/frontend.css', array(), ENAMEL_SL_VERSION);
-            
-            // Load Google Fonts
-            $primary_font = get_option('enamel_sl_primary_font', 'Montserrat');
-            $secondary_font = get_option('enamel_sl_secondary_font', 'Rubik');
-            $fonts = urlencode($primary_font . ':400,500,600,700|' . $secondary_font . ':400,500');
-            wp_enqueue_style('enamel-sl-google-fonts', 'https://fonts.googleapis.com/css2?family=' . $fonts . '&display=swap');
-            
+            wp_enqueue_script('enamel-sl-frontend', ENAMEL_SL_PLUGIN_URL . 'assets/frontend.js', array(), ENAMEL_SL_VERSION, true);
+
+            // Google Fonts removed — theme already loads Montserrat + Rubik
+
             // Add preconnect hints for Google domains (if enabled - default ON)
             $enable_preconnect = get_option('enamel_sl_enable_preconnect', '1');
             if ($enable_preconnect === '1') {
