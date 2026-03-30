@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.2.5
+ * Version: 1.2.6
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.2.5');
+define('ENAMEL_SL_VERSION', '1.2.6');
 
 /**
  * Main Enamel Store Locator Class
@@ -2138,12 +2138,23 @@ function enamel_sl_check_for_update( $transient ) {
     $latest_version = ltrim( $release['tag_name'], 'v' );
 
     if ( version_compare( $latest_version, ENAMEL_SL_VERSION, '>' ) ) {
+        // Use the uploaded zip asset if available, fall back to zipball
+        $package = $release['zipball_url'];
+        if ( ! empty( $release['assets'] ) ) {
+            foreach ( $release['assets'] as $asset ) {
+                if ( pathinfo( $asset['name'], PATHINFO_EXTENSION ) === 'zip' ) {
+                    $package = $asset['browser_download_url'];
+                    break;
+                }
+            }
+        }
+
         $transient->response[ $plugin_slug ] = (object) array(
             'slug'        => dirname( $plugin_slug ),
             'plugin'      => $plugin_slug,
             'new_version' => $latest_version,
             'url'         => 'https://github.com/drharcho/enamel-store-locator',
-            'package'     => $release['zipball_url'],
+            'package'     => $package,
         );
     }
 
