@@ -71,6 +71,9 @@ class EnamelStoreLocator {
         
         // AJAX hooks for Google Places API
         add_action('wp_ajax_enamel_fetch_place_details', array($this, 'ajax_fetch_place_details'));
+
+        // REST API
+        add_action('rest_api_init', array($this, 'register_rest_api'));
         
         // WP Rocket compatibility - safelist our CSS from Remove Unused CSS
         add_filter('rocket_rucss_safelist', array($this, 'wp_rocket_safelist'));
@@ -1813,6 +1816,24 @@ class EnamelStoreLocator {
     }
     
     /**
+     * Register REST API endpoints
+     */
+    public function register_rest_api() {
+        register_rest_route('enamel-sl/v1', '/locations', array(
+            'methods'             => 'GET',
+            'callback'            => array($this, 'rest_get_locations'),
+            'permission_callback' => '__return_true',
+        ));
+    }
+
+    /**
+     * REST API: return all active locations
+     */
+    public function rest_get_locations() {
+        return rest_ensure_response($this->get_all_locations());
+    }
+
+    /**
      * Get all active locations with sanitized data
      */
     private function get_all_locations() {
@@ -2082,3 +2103,49 @@ class EnamelStoreLocator {
 add_action('plugins_loaded', function() {
     EnamelStoreLocator::get_instance();
 });
+
+// ---------------------------------------------------------------------------
+// Auto-updater — checks GitHub releases for new versions
+// ---------------------------------------------------------------------------
+add_filter( 'pre_set_site_transient_update_plugins', 'enamel_sl_check_for_update' );
+
+function enamel_sl_check_for_update( $transient ) {
+    if ( empty( $transient->checked ) ) {
+        return $transient;
+    }
+
+    $plugin_slug = plugin_basename( __FILE__ );
+    $api_url     = 'https://api.github.com/repos/drharcho/enamel-store-locator/releases/latest';
+
+    $response = wp_remote_get( $api_url, array(
+        'headers' => array(
+            'Accept'     => 'application/vnd.github+json',
+            'User-Agent' => 'WordPress/' . get_bloginfo( 'version' ),
+        ),
+        'timeout' => 10,
+    ) );
+
+    if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+        return $transient;
+    }
+
+    $release = json_decode( wp_remote_retrieve_body( $response ), true );
+
+    if ( empty( $release['tag_name'] ) ) {
+        return $transient;
+    }
+
+    $latest_version = ltrim( $release['tag_name'], 'v' );
+
+    if ( version_compare( $latest_version, ENAMEL_SL_VERSION, '>' ) ) {
+        $transient->response[ $plugin_slug ] = (object) array(
+            'slug'        => dirname( $plugin_slug ),
+            'plugin'      => $plugin_slug,
+            'new_version' => $latest_version,
+            'url'         => 'https://github.com/drharcho/enamel-store-locator',
+            'package'     => $release['zipball_url'],
+        );
+    }
+
+    return $transient;
+}

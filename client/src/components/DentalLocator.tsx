@@ -7,54 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MapIcon, MapPin, Search, Crosshair } from 'lucide-react';
 
-// Sample dental clinic locations - these would come from WordPress backend
-const DENTAL_LOCATIONS: StoreLocation[] = [
-  {
-    id: '1',
-    name: 'Enamel Dentistry - Downtown Austin',
-    address: '123 Congress Avenue, Austin, TX 78701',
-    lat: 30.2672,
-    lng: -97.7431,
-    phone: '(512) 555-0123',
-    hours: 'Mon-Fri 8AM-6PM, Sat 9AM-3PM'
-  },
-  {
-    id: '2',
-    name: 'Enamel Dentistry - Cedar Park',
-    address: '456 Ranch Road 620, Cedar Park, TX 78613',
-    lat: 30.5052,
-    lng: -97.8203,
-    phone: '(512) 555-0456',
-    hours: 'Mon-Thu 8AM-7PM, Fri 8AM-5PM'
-  },
-  {
-    id: '3',
-    name: 'Enamel Dentistry - Round Rock',
-    address: '789 Main Street, Round Rock, TX 78664',
-    lat: 30.5085,
-    lng: -97.6789,
-    phone: '(512) 555-0789',
-    hours: 'Mon-Fri 8AM-6PM, Sat 8AM-2PM'
-  },
-  {
-    id: '4',
-    name: 'Enamel Dentistry - South Austin',
-    address: '101 South Lamar Blvd, Austin, TX 78704',
-    lat: 30.2500,
-    lng: -97.7667,
-    phone: '(512) 555-0101',
-    hours: 'Tue-Sat 9AM-6PM'
-  },
-  {
-    id: '5',
-    name: 'Enamel Dentistry - The Domain',
-    address: '202 Domain Drive, Austin, TX 78758',
-    lat: 30.4000,
-    lng: -97.7200,
-    phone: '(512) 555-0202',
-    hours: 'Mon-Fri 8AM-7PM, Sat 9AM-4PM'
-  }
-];
+// Resolve the WP REST API URL:
+// 1. Injected by WordPress via wp_localize_script (production)
+// 2. VITE_WP_API_URL env var (local dev pointing at live WP site)
+// 3. Relative URL fallback (works when React is embedded in WP)
+declare global {
+  interface Window { enamelLocatorConfig?: { apiUrl: string } }
+}
+const WP_API_URL =
+  window.enamelLocatorConfig?.apiUrl ??
+  import.meta.env.VITE_WP_API_URL ??
+  '/wp-json/enamel-sl/v1/locations';
 
 interface DentalLocatorProps {
   defaultCenter?: { lat: number; lng: number };
@@ -67,11 +30,39 @@ export default function DentalLocator({
   defaultZoom = 10,
   className = ""
 }: DentalLocatorProps) {
+  const [locations, setLocations] = useState<StoreLocation[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<StoreLocation | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
+  // Fetch locations from WordPress REST API
+  useEffect(() => {
+    fetch(WP_API_URL)
+      .then(res => res.json())
+      .then((data: StoreLocation[]) => {
+        setLocations(data);
+      })
+      .catch(() => {
+        // Fallback mock data for local preview
+        setLocations([
+          { id: '1', name: 'Enamel Dentistry Leander', address: '128 South Brook Drive', city: 'Leander', state: 'TX', zip: '78641', phone: '+1 (512) 337-3415', lat: 30.5788, lng: -97.8531, hours: 'Monday: 8:00AM – 6:00PM\nTuesday: 8:00AM – 6:00PM\nWednesday: 8:00AM – 6:00PM', booking_url: '#', rating: 5 },
+          { id: '2', name: 'Enamel Dentistry Easton Park', address: '7101 East William Cannon Drive', city: 'Austin', state: 'TX', zip: '78744', phone: '+1 (512) 489-4015', lat: 30.1869, lng: -97.7198, hours: 'Monday: 8:00AM – 6:00PM\nTuesday: 8:00AM – 6:00PM', booking_url: '#', rating: 5 },
+          { id: '3', name: 'Enamel Dentistry Manor', address: '14008 Shadow Glen Boulevard', city: 'Manor', state: 'TX', zip: '78653', phone: '+1 (512) 982-1272', lat: 30.3418, lng: -97.5567, hours: 'Monday: 8:00AM – 6:00PM\nFriday: 8:00AM – 5:00PM', booking_url: '#', rating: 5 },
+          { id: '4', name: 'Enamel Dentistry At The Grove', address: '4301 Bull Creek Road', city: 'Austin', state: 'TX', zip: '78731', phone: '+1 (512) 884-5658', lat: 30.3356, lng: -97.7526, hours: 'Monday: 8:00AM – 6:00PM\nSaturday: 9:00AM – 3:00PM', booking_url: '#', rating: 5 },
+          { id: '5', name: 'Enamel Dentistry The Domain', address: '11005 Burnet Road', city: 'Austin', state: 'TX', zip: '78758', phone: '+1 (512) 646-0815', lat: 30.4015, lng: -97.7198, hours: 'Monday: 8:00AM – 7:00PM\nSaturday: 9:00AM – 4:00PM', booking_url: '#', rating: 5 },
+          { id: '6', name: 'Enamel Dentistry Saltillo (East Austin)', address: '901 East 5th Street', city: 'Austin', state: 'TX', zip: '78702', phone: '+1 (512) 649-7510', lat: 30.2637, lng: -97.7298, hours: 'Tuesday: 9:00AM – 6:00PM\nSaturday: 9:00AM – 3:00PM', booking_url: '#', rating: 5 },
+          { id: '7', name: 'Enamel Dentistry Lantana', address: '7415 Southwest Parkway Building 6 #200', city: 'Austin', state: 'TX', zip: '78735', phone: '+1 (512) 648-6115', lat: 30.2456, lng: -97.8456, hours: 'Monday: 8:00AM – 6:00PM', booking_url: '#', rating: 5 },
+          { id: '8', name: 'Enamel Dentistry Parmer Park', address: '1606 East Parmer Lane', city: 'Austin', state: 'TX', zip: '78753', phone: '+1 (512) 572-0215', lat: 30.4234, lng: -97.6789, hours: 'Monday: 8:00AM – 6:00PM\nFriday: 8:00AM – 5:00PM', booking_url: '#', rating: 4 },
+          { id: '9', name: 'Enamel Dentistry & Sleep Wellness', address: '6700 Alma Road', city: 'McKinney', state: 'TX', zip: '75070', phone: '+1 (469) 663-0515', lat: 33.1976, lng: -96.6398, hours: 'Monday: 8:00AM – 6:00PM\nSaturday: 9:00AM – 2:00PM', booking_url: '#', rating: 5 },
+        ]);
+      })
+      .finally(() => {
+        setIsLoadingLocations(false);
+      });
+  }, []);
 
   // Auto-prompt for user's location on page load (without scrolling)
   useEffect(() => {
@@ -143,12 +134,12 @@ export default function DentalLocator({
 
   // Find nearest location to given coordinates
   const findNearestLocation = useCallback((userLat: number, userLng: number): StoreLocation | null => {
-    if (DENTAL_LOCATIONS.length === 0) return null;
+    if (locations.length === 0) return null;
     
-    let nearest = DENTAL_LOCATIONS[0];
+    let nearest = locations[0];
     let minDistance = calculateDistance(userLat, userLng, nearest.lat, nearest.lng);
     
-    for (const location of DENTAL_LOCATIONS) {
+    for (const location of locations) {
       const distance = calculateDistance(userLat, userLng, location.lat, location.lng);
       if (distance < minDistance) {
         minDistance = distance;
@@ -211,7 +202,7 @@ export default function DentalLocator({
             Find Your Nearest Location
           </h1>
           <p className="text-primary-foreground/90 text-sm">
-            Quality dental care across Texas with {DENTAL_LOCATIONS.length} convenient locations
+            Quality dental care across Texas with {locations.length} convenient locations
           </p>
         </div>
 
@@ -285,7 +276,11 @@ export default function DentalLocator({
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
-              {DENTAL_LOCATIONS.map((location) => (
+              {isLoadingLocations ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : locations.map((location) => (
                 <Card 
                   key={location.id}
                   className={`cursor-pointer transition-all hover-elevate ${
@@ -381,7 +376,7 @@ export default function DentalLocator({
         <MapView
           center={mapCenter}
           zoom={defaultZoom}
-          stores={DENTAL_LOCATIONS}
+          stores={locations}
           selectedStore={selectedLocation}
           onStoreSelect={handleLocationSelect}
           userLocation={userLocation}
