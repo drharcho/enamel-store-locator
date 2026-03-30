@@ -1356,7 +1356,7 @@ class EnamelStoreLocator {
         window.enamelSLInstances = window.enamelSLInstances || {};
         window.enamelSLInstances[<?php echo wp_json_encode($container_id); ?>] = <?php echo wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
         </script>
-        <?php // frontend.js (enqueued externally) reads window.enamelSLInstances and initialises each locator. endif; ?>
+        <?php endif; // api_key check — frontend.js handles the rest ?>
 
         <?php
         return ob_get_clean();
