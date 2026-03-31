@@ -123,20 +123,12 @@
 
             var infoEl = document.createElement('div');
             infoEl.className = 'esl-location-info';
-
-            var addrRow = document.createElement('div');
-            addrRow.className = 'esl-info-row';
-            addrRow.innerHTML = '<svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-pin"></use></svg>' +
+            infoEl.innerHTML = '<svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-pin"></use></svg>' +
                 '<span>' + escapeHtml(loc.address || '') + '<br>' +
                 escapeHtml((loc.city || '') + ', ' + (loc.state || '') + ' ' + (loc.zip || '')) + '</span>';
-            infoEl.appendChild(addrRow);
-
             if (loc.phone) {
-                var phoneRow = document.createElement('div');
-                phoneRow.className = 'esl-info-row';
-                phoneRow.innerHTML = '<svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-phone"></use></svg>' +
+                infoEl.innerHTML += '<svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-phone"></use></svg>' +
                     '<span>' + escapeHtml(loc.phone) + '</span>';
-                infoEl.appendChild(phoneRow);
             }
             card.appendChild(infoEl);
 

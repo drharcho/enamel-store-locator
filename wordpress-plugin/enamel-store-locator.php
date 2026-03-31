@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.3.4
+ * Version: 1.3.5
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.3.4');
+define('ENAMEL_SL_VERSION', '1.3.5');
 
 /**
  * Main Enamel Store Locator Class
@@ -1289,18 +1289,11 @@ class EnamelStoreLocator {
                             <div class="esl-location-card" data-index="<?php echo esc_attr($loc_index); ?>" data-lat="<?php echo esc_attr($location['lat']); ?>" data-lng="<?php echo esc_attr($location['lng']); ?>">
                                 <div class="esl-location-name"><?php echo esc_html($location['name']); ?></div>
                                 <div class="esl-location-info">
-                                    <div class="esl-info-row">
-                                        <svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-pin"></use></svg>
-                                        <span>
-                                            <?php echo esc_html($location['address']); ?><br>
-                                            <?php echo esc_html($location['city'] . ', ' . $location['state'] . ' ' . $location['zip']); ?>
-                                        </span>
-                                    </div>
+                                    <svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-pin"></use></svg>
+                                    <span><?php echo esc_html($location['address']); ?><br><?php echo esc_html($location['city'] . ', ' . $location['state'] . ' ' . $location['zip']); ?></span>
                                     <?php if ($location['phone']): ?>
-                                    <div class="esl-info-row">
-                                        <svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-phone"></use></svg>
-                                        <span><?php echo esc_html($location['phone']); ?></span>
-                                    </div>
+                                    <svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-phone"></use></svg>
+                                    <span><?php echo esc_html($location['phone']); ?></span>
                                     <?php endif; ?>
                                 </div>
                                 <div class="esl-buttons">
