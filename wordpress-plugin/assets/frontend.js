@@ -107,6 +107,121 @@
             return div.innerHTML;
         }
 
+        // ── Deferred card rendering ─────────────────────────────────────────
+
+        function renderCard(loc, locIndex) {
+            var card = document.createElement('div');
+            card.className = 'esl-location-card';
+            card.setAttribute('data-index', locIndex);
+            card.setAttribute('data-lat', loc.lat);
+            card.setAttribute('data-lng', loc.lng);
+
+            var nameEl = document.createElement('div');
+            nameEl.className = 'esl-location-name';
+            nameEl.textContent = loc.name || '';
+            card.appendChild(nameEl);
+
+            var infoEl = document.createElement('div');
+            infoEl.className = 'esl-location-info';
+
+            var addrRow = document.createElement('div');
+            addrRow.className = 'esl-info-row';
+            addrRow.innerHTML = '<svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-pin"></use></svg>' +
+                '<span>' + escapeHtml(loc.address || '') + '<br>' +
+                escapeHtml((loc.city || '') + ', ' + (loc.state || '') + ' ' + (loc.zip || '')) + '</span>';
+            infoEl.appendChild(addrRow);
+
+            if (loc.phone) {
+                var phoneRow = document.createElement('div');
+                phoneRow.className = 'esl-info-row';
+                phoneRow.innerHTML = '<svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-phone"></use></svg>' +
+                    '<span>' + escapeHtml(loc.phone) + '</span>';
+                infoEl.appendChild(phoneRow);
+            }
+            card.appendChild(infoEl);
+
+            var btnsEl = document.createElement('div');
+            btnsEl.className = 'esl-buttons';
+
+            if (showSchedule && loc.booking_url) {
+                var schedBtn = document.createElement('a');
+                schedBtn.href = loc.booking_url;
+                schedBtn.target = '_blank';
+                schedBtn.rel = 'noopener';
+                schedBtn.className = 'esl-btn esl-btn-accent';
+                schedBtn.textContent = scheduleText;
+                btnsEl.appendChild(schedBtn);
+            }
+            if (showCall && loc.phone) {
+                var callBtn = document.createElement('a');
+                callBtn.href = 'tel:' + loc.phone.replace(/[^0-9]/g, '');
+                callBtn.className = 'esl-btn esl-btn-outline';
+                callBtn.textContent = callText;
+                btnsEl.appendChild(callBtn);
+            }
+            if (showDirections) {
+                var dirBtn = document.createElement('a');
+                dirBtn.href = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(loc.lat + ',' + loc.lng);
+                dirBtn.target = '_blank';
+                dirBtn.rel = 'noopener';
+                dirBtn.className = 'esl-btn esl-btn-primary';
+                dirBtn.style.marginLeft = 'auto';
+                dirBtn.innerHTML = '<svg width="14" height="14" aria-hidden="true"><use href="#esl-icon-directions"></use></svg> ' + escapeHtml(directionsText);
+                btnsEl.appendChild(dirBtn);
+            }
+            card.appendChild(btnsEl);
+            return card;
+        }
+
+        function renderCards(sortedItems, limit) {
+            var list = document.getElementById(containerId + '-locations');
+            if (!list) return;
+            list.innerHTML = '';
+
+            var toShow    = limit > 0 ? sortedItems.slice(0, limit) : sortedItems;
+            var remaining = limit > 0 ? sortedItems.slice(limit)    : [];
+
+            toShow.forEach(function (item) {
+                list.appendChild(renderCard(item.location, item.index));
+            });
+
+            if (remaining.length > 0) {
+                var showMoreBtn = document.createElement('button');
+                showMoreBtn.type = 'button';
+                showMoreBtn.className = 'esl-show-more-btn';
+                showMoreBtn.textContent = 'Show ' + remaining.length + ' more location' + (remaining.length !== 1 ? 's' : '');
+                showMoreBtn.addEventListener('click', function () {
+                    showMoreBtn.remove();
+                    remaining.forEach(function (item) {
+                        list.appendChild(renderCard(item.location, item.index));
+                    });
+                });
+                list.appendChild(showMoreBtn);
+            }
+        }
+
+        // Attach click → map sync via event delegation (works for both static and dynamic cards)
+        function bindCardListEvents() {
+            var list = document.getElementById(containerId + '-locations');
+            if (!list || list._eslBound) return;
+            list._eslBound = true;
+            list.addEventListener('click', function (e) {
+                var card = e.target.closest('.esl-location-card');
+                if (!card) return;
+                var mapData = window['eslMap_' + containerId];
+                if (!mapData) return;
+                document.querySelectorAll('#' + containerId + ' .esl-location-card').forEach(function (c) { c.classList.remove('active'); });
+                card.classList.add('active');
+                var idx = parseInt(card.getAttribute('data-index'), 10);
+                if (!isNaN(idx) && mapData.markers[idx]) {
+                    var p = mapData.markers[idx].position || mapData.markers[idx].getPosition();
+                    mapData.map.setCenter(p);
+                    mapData.map.setZoom(15);
+                    google.maps.event.trigger(mapData.markers[idx], 'click');
+                }
+            });
+        }
+
         // ── Map init ────────────────────────────────────────────────────────
 
         function initMap() {
@@ -175,21 +290,8 @@
                 map.setZoom(14);
             }
 
-            var allCards = document.querySelectorAll('#' + containerId + ' .esl-location-card');
-            allCards.forEach(function (card, index) {
-                card.addEventListener('click', function () {
-                    allCards.forEach(function (c) { c.classList.remove('active'); });
-                    card.classList.add('active');
-                    if (markers[index]) {
-                        var p = markers[index].position || markers[index].getPosition();
-                        map.setCenter(p);
-                        map.setZoom(15);
-                        google.maps.event.trigger(markers[index], 'click');
-                    }
-                });
-            });
-
             window['eslMap_' + containerId] = { map: map, markers: markers };
+            bindCardListEvents();
         }
 
         // ── Distance / sort ─────────────────────────────────────────────────
@@ -217,10 +319,11 @@
             mapData.map.setCenter({ lat: parseFloat(nearest.location.lat), lng: parseFloat(nearest.location.lng) });
             mapData.map.setZoom(13);
 
-            var allCards = document.querySelectorAll('#' + containerId + ' .esl-location-card');
-            allCards.forEach(function (c) { c.classList.remove('active'); });
-            var nearestCard = document.querySelector('#' + containerId + ' .esl-location-card[data-lat="' + nearest.location.lat + '"][data-lng="' + nearest.location.lng + '"]');
+            if (deferRender) { renderCards(sorted, initialResults); }
+
+            var nearestCard = document.querySelector('#' + containerId + ' .esl-location-card[data-index="' + nearest.index + '"]');
             if (nearestCard) {
+                document.querySelectorAll('#' + containerId + ' .esl-location-card').forEach(function (c) { c.classList.remove('active'); });
                 nearestCard.classList.add('active');
                 nearestCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
@@ -230,6 +333,13 @@
         }
 
         function sortLocationsSilent(userLat, userLng) {
+            if (deferRender) {
+                var sorted = locations.map(function (loc, index) {
+                    return { location: loc, index: index, distance: calculateDistance(userLat, userLng, parseFloat(loc.lat), parseFloat(loc.lng)) };
+                }).sort(function (a, b) { return a.distance - b.distance; });
+                renderCards(sorted, initialResults);
+                return;
+            }
             var list = document.getElementById(containerId + '-locations');
             if (!list) return;
             var cards = Array.from(list.querySelectorAll('.esl-location-card'));
@@ -292,6 +402,12 @@
                 );
             }, 500);
         }
+
+        var deferRender    = cfg.deferRender;
+        var initialResults = cfg.initialResults || 5;
+        var scheduleText   = cfg.scheduleText   || 'Schedule Online';
+        var callText       = cfg.callText       || 'Call Now';
+        var directionsText = cfg.directionsText || 'Directions';
 
         var callbackName = 'enamelInitMap_' + containerId.replace(/-/g, '_');
         var libraries    = useAdvancedMarkers ? '&libraries=marker' : '';

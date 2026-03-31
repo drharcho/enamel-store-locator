@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.3.3
+ * Version: 1.3.4
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.3.3');
+define('ENAMEL_SL_VERSION', '1.3.4');
 
 /**
  * Main Enamel Store Locator Class
@@ -229,6 +229,8 @@ class EnamelStoreLocator {
             'enable_lazy_load' => array($this, 'sanitize_checkbox'),
             'defer_scripts' => array($this, 'sanitize_checkbox'),
             'enable_preconnect' => array($this, 'sanitize_checkbox'),
+            'defer_render' => array($this, 'sanitize_checkbox'),
+            'initial_results' => 'absint',
         );
         
         foreach ($general_settings as $option_name => $sanitize_callback) {
@@ -1021,6 +1023,24 @@ class EnamelStoreLocator {
                             <p class="description"><?php _e('Add preconnect hints for Google Maps domains to speed up initial connection.', 'enamel-store-locator'); ?></p>
                         </td>
                     </tr>
+                    <tr>
+                        <th><label for="enamel_sl_defer_render"><?php _e('Defer Card Rendering', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <label>
+                                <input type="hidden" name="enamel_sl_defer_render" value="0" />
+                                <input type="checkbox" id="enamel_sl_defer_render" name="enamel_sl_defer_render" value="1" <?php checked(get_option('enamel_sl_defer_render', '0'), '1'); ?> />
+                                <?php _e('Render location cards only after a search', 'enamel-store-locator'); ?>
+                            </label>
+                            <p class="description"><?php _e('Removes ~150 DOM elements from the initial page load. Cards are built dynamically when the user searches or clicks "Use My Location". Recommended for pages where the locator is not above the fold.', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="enamel_sl_initial_results"><?php _e('Initial Results', 'enamel-store-locator'); ?></label></th>
+                        <td>
+                            <input type="number" id="enamel_sl_initial_results" name="enamel_sl_initial_results" value="<?php echo esc_attr(get_option('enamel_sl_initial_results', '5')); ?>" min="1" max="20" class="small-text" />
+                            <p class="description"><?php _e('Number of nearest results to show after a search (requires Defer Card Rendering). A "Show more" button reveals the rest.', 'enamel-store-locator'); ?></p>
+                        </td>
+                    </tr>
                 </table>
                 
                 <?php submit_button(); ?>
@@ -1259,9 +1279,14 @@ class EnamelStoreLocator {
                         <div class="esl-no-locations">
                             <p><?php _e('No locations found. Add locations in the WordPress admin.', 'enamel-store-locator'); ?></p>
                         </div>
+                    <?php elseif (get_option('enamel_sl_defer_render', '0') === '1'): ?>
+                        <div class="esl-defer-prompt">
+                            <svg aria-hidden="true"><use href="#esl-icon-search"></use></svg>
+                            <?php _e('Search above or use your location to find the nearest clinic.', 'enamel-store-locator'); ?>
+                        </div>
                     <?php else: ?>
-                        <?php foreach ($locations as $location): ?>
-                            <div class="esl-location-card" data-lat="<?php echo esc_attr($location['lat']); ?>" data-lng="<?php echo esc_attr($location['lng']); ?>">
+                        <?php foreach ($locations as $loc_index => $location): ?>
+                            <div class="esl-location-card" data-index="<?php echo esc_attr($loc_index); ?>" data-lat="<?php echo esc_attr($location['lat']); ?>" data-lng="<?php echo esc_attr($location['lng']); ?>">
                                 <div class="esl-location-name"><?php echo esc_html($location['name']); ?></div>
                                 <div class="esl-location-info">
                                     <div class="esl-info-row">
@@ -1351,6 +1376,11 @@ class EnamelStoreLocator {
                 'mapStyle'                => $style_data,
                 'apiKey'                  => sanitize_text_field($api_key),
                 'lazyLoad'                => get_option('enamel_sl_enable_lazy_load', '1') === '1',
+                'deferRender'             => get_option('enamel_sl_defer_render', '0') === '1',
+                'initialResults'          => max(1, intval(get_option('enamel_sl_initial_results', '5'))),
+                'scheduleText'            => sanitize_text_field($settings['schedule_button_text']),
+                'callText'                => sanitize_text_field($settings['call_button_text']),
+                'directionsText'          => sanitize_text_field($settings['directions_button_text']),
             );
         ?>
         <script>
