@@ -1207,6 +1207,27 @@ class EnamelStoreLocator {
         ?>
         <div id="<?php echo esc_attr($container_id); ?>" class="enamel-store-locator-container" style="width: <?php echo esc_attr($atts['width']); ?>; min-height: <?php echo esc_attr($atts['height']); ?>; --esl-primary: <?php echo esc_attr($settings['primary_color']); ?>; --esl-accent: <?php echo esc_attr($settings['accent_color']); ?>; --esl-bg: <?php echo esc_attr($settings['background_color']); ?>; --esl-card-bg: <?php echo esc_attr($settings['card_background']); ?>; --esl-header-bg: <?php echo esc_attr($settings['header_background']); ?>; --esl-text: <?php echo esc_attr($settings['text_primary']); ?>; --esl-text-secondary: <?php echo esc_attr($settings['text_secondary']); ?>; --esl-btn-text: <?php echo esc_attr($settings['button_text_color']); ?>; --esl-header-text: <?php echo esc_attr($settings['header_text_color']); ?>; --esl-card-text: <?php echo esc_attr($settings['card_text_color']); ?>; --esl-font-heading: <?php echo esc_attr($settings['primary_font']); ?>; --esl-font-body: <?php echo esc_attr($settings['secondary_font']); ?>; --esl-font-size: <?php echo esc_attr($settings['font_size_base']); ?>px;">
             
+            <!-- SVG sprite: one definition, referenced everywhere via <use> -->
+            <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+                <symbol id="esl-icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
+                </symbol>
+                <symbol id="esl-icon-crosshair" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="1"></circle>
+                    <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line>
+                    <line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line>
+                </symbol>
+                <symbol id="esl-icon-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
+                </symbol>
+                <symbol id="esl-icon-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </symbol>
+                <symbol id="esl-icon-directions" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                </symbol>
+            </svg>
+
             <div class="esl-header">
                 <h2 class="esl-header-title"><?php echo esc_html($settings['header_main_title']); ?></h2>
                 <p class="esl-header-subtitle"><?php echo esc_html($settings['header_subtitle']); ?></p>
@@ -1218,29 +1239,16 @@ class EnamelStoreLocator {
                     <div class="esl-search-box">
                         <h3 class="esl-search-title"><?php _e('Find Nearest Location', 'enamel-store-locator'); ?></h3>
                         <div class="esl-search-input-wrapper">
-                            <svg class="esl-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="m21 21-4.3-4.3"></path>
-                            </svg>
+                            <svg class="esl-search-icon" aria-hidden="true"><use href="#esl-icon-search"></use></svg>
                             <input type="text" class="esl-search-input" id="<?php echo esc_attr($container_id); ?>-search" placeholder="<?php echo esc_attr($settings['search_input_placeholder']); ?>" />
                         </div>
                         <button type="button" class="esl-search-btn" id="<?php echo esc_attr($container_id); ?>-search-btn">
-                            <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="m21 21-4.3-4.3"></path>
-                            </svg>
+                            <svg width="16" height="16" aria-hidden="true"><use href="#esl-icon-search"></use></svg>
                             <?php _e('Search', 'enamel-store-locator'); ?>
                         </button>
                         <div class="esl-search-divider"><span><?php _e('or', 'enamel-store-locator'); ?></span></div>
                         <button type="button" class="esl-location-btn" id="<?php echo esc_attr($container_id); ?>-location-btn">
-                            <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <line x1="12" y1="2" x2="12" y2="6"></line>
-                                <line x1="12" y1="18" x2="12" y2="22"></line>
-                                <line x1="2" y1="12" x2="6" y2="12"></line>
-                                <line x1="18" y1="12" x2="22" y2="12"></line>
-                            </svg>
+                            <svg width="16" height="16" aria-hidden="true"><use href="#esl-icon-crosshair"></use></svg>
                             <span class="esl-location-btn-text"><?php _e('Use My Location', 'enamel-store-locator'); ?></span>
                         </button>
                     </div>
@@ -1257,10 +1265,7 @@ class EnamelStoreLocator {
                                 <div class="esl-location-name"><?php echo esc_html($location['name']); ?></div>
                                 <div class="esl-location-info">
                                     <div class="esl-info-row">
-                                        <svg class="esl-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                            <circle cx="12" cy="10" r="3"></circle>
-                                        </svg>
+                                        <svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-pin"></use></svg>
                                         <span>
                                             <?php echo esc_html($location['address']); ?><br>
                                             <?php echo esc_html($location['city'] . ', ' . $location['state'] . ' ' . $location['zip']); ?>
@@ -1268,9 +1273,7 @@ class EnamelStoreLocator {
                                     </div>
                                     <?php if ($location['phone']): ?>
                                     <div class="esl-info-row">
-                                        <svg class="esl-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                        </svg>
+                                        <svg class="esl-info-icon" aria-hidden="true"><use href="#esl-icon-phone"></use></svg>
                                         <span><?php echo esc_html($location['phone']); ?></span>
                                     </div>
                                     <?php endif; ?>
@@ -1288,9 +1291,7 @@ class EnamelStoreLocator {
                                     <?php endif; ?>
                                     <?php if ($settings['enable_directions_button']): ?>
                                         <a href="https://www.google.com/maps/dir/?api=1&destination=<?php echo esc_attr($location['lat']); ?>,<?php echo esc_attr($location['lng']); ?>" target="_blank" class="esl-btn esl-btn-primary" style="margin-left: auto;">
-                                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-                                            </svg>
+                                            <svg width="14" height="14" aria-hidden="true"><use href="#esl-icon-directions"></use></svg>
                                             <?php echo esc_html($settings['directions_button_text']); ?>
                                         </a>
                                     <?php endif; ?>
