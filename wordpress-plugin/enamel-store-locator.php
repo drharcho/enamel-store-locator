@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.3.5
+ * Version: 1.3.6
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.3.5');
+define('ENAMEL_SL_VERSION', '1.3.6');
 
 /**
  * Main Enamel Store Locator Class
@@ -939,7 +939,7 @@ class EnamelStoreLocator {
                     </tr>
                     <tr>
                         <th><label for="enamel_sl_search_input_placeholder"><?php _e('Search Placeholder', 'enamel-store-locator'); ?></label></th>
-                        <td><input type="text" id="enamel_sl_search_input_placeholder" name="enamel_sl_search_input_placeholder" value="<?php echo esc_attr(get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code')); ?>" class="regular-text" /></td>
+                        <td><input type="text" id="enamel_sl_search_input_placeholder" name="enamel_sl_search_input_placeholder" value="<?php echo esc_attr(get_option('enamel_sl_search_input_placeholder', 'City, state, or zip')); ?>" class="regular-text" /></td>
                     </tr>
                 </table>
                 
@@ -1457,7 +1457,7 @@ class EnamelStoreLocator {
         return array(
             'header_main_title' => get_option('enamel_sl_header_main_title', 'Find Your Nearest Location'),
             'header_subtitle' => get_option('enamel_sl_header_subtitle', 'Quality dental care across Texas with convenient locations'),
-            'search_input_placeholder' => get_option('enamel_sl_search_input_placeholder', 'Enter address or zip code') ?: 'Enter address or zip code',
+            'search_input_placeholder' => get_option('enamel_sl_search_input_placeholder', 'City, state, or zip') ?: 'City, state, or zip',
             // Button visibility (default ON for all)
             'enable_schedule_button' => get_option('enamel_sl_enable_schedule_button', '1'),
             'enable_directions_button' => get_option('enamel_sl_enable_directions_button', '1'),
