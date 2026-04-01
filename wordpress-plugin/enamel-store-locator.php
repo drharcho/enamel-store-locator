@@ -3,7 +3,7 @@
  * Plugin Name: Enamel Store Locator
  * Plugin URI: https://enamel-dentistry.com/plugins/store-locator
  * Description: Intelligent store locator with Google Maps integration, customizable branding, and comprehensive location management for dental practices.
- * Version: 1.3.6
+ * Version: 1.3.7
  * Author: Enamel Dentistry
  * License: GPL v2 or later
  * Text Domain: enamel-store-locator
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('ENAMEL_SL_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENAMEL_SL_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('ENAMEL_SL_VERSION', '1.3.6');
+define('ENAMEL_SL_VERSION', '1.3.7');
 
 /**
  * Main Enamel Store Locator Class
@@ -1259,7 +1259,6 @@ class EnamelStoreLocator {
                     <div class="esl-search-box">
                         <h3 class="esl-search-title"><?php _e('Find Nearest Location', 'enamel-store-locator'); ?></h3>
                         <div class="esl-search-input-wrapper">
-                            <svg class="esl-search-icon" aria-hidden="true"><use href="#esl-icon-search"></use></svg>
                             <input type="text" class="esl-search-input" id="<?php echo esc_attr($container_id); ?>-search" placeholder="<?php echo esc_attr($settings['search_input_placeholder']); ?>" />
                         </div>
                         <button type="button" class="esl-search-btn" id="<?php echo esc_attr($container_id); ?>-search-btn">
